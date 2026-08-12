@@ -2,7 +2,8 @@
   "manifest_version": 2,
   "name": "Usage Badge for Claude.ai",
   "version": "1.0.5",
-  "description": "Shows your remaining Claude.ai usage as a toolbar badge. Unofficial, not affiliated with, endorsed by, or sponsored by Anthropic.",
+  "description": "__MSG_extDescription__",
+  "default_locale": "en",
   "author": "dev.ilsix@ilsix.email",
   "icons": {
     "48": "icon.svg",
