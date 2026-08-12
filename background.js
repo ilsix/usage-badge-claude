@@ -109,7 +109,12 @@ function buildRotation(summary) {
 }
 
 function renderBadge() {
-  if (dataStale) {
+  if (!showSession && !showSessionReset && !showWeek) {
+    browser.browserAction.setBadgeText({ text: "" });
+    return;
+  }
+
+  if (!orgId || dataStale) {
     browser.browserAction.setBadgeText({ text: "?" });
     browser.browserAction.setBadgeBackgroundColor({ color: UNKNOWN_COLOR });
     return;
@@ -164,8 +169,7 @@ function updateBadge(data) {
 
 async function pollUsage() {
   if (!orgId) {
-    browser.browserAction.setBadgeText({ text: "?" });
-    browser.browserAction.setBadgeBackgroundColor({ color: UNKNOWN_COLOR });
+    renderBadge();
     browser.browserAction.setTitle({
       title: "Claude Usage: keine Organisation-ID gesetzt (im Popup unter Einstellungen eintragen)"
     });
