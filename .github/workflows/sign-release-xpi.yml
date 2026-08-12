@@ -58,25 +58,18 @@ jobs:
           retention-days: 30
           if-no-files-found: error
 
-      - name: Create or update stable release
+      - name: Create versioned stable release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          TAG="stable"
+          VERSION="${{ steps.vars.outputs.version }}"
+          TAG="v${VERSION}"
           XPI_PATH="web-ext-artifacts/usage-badge-claude-ai.xpi"
-          NOTES="Signed build from \`main\` at commit ${GITHUB_SHA} (manifest version ${{ steps.vars.outputs.version }}), submitted to AMO on the unlisted channel.
+          NOTES="Signed build from \`main\` at commit ${GITHUB_SHA}, submitted to AMO on the unlisted channel.
 
-          This asset's URL never changes — it always points to the latest signed build, so it can be used as a permanent \`install_url\` for Firefox Enterprise Policies (\`policies.json\` / \`programs.firefox.policies.ExtensionSettings\`)."
+          Permanent \"always latest stable\" download link (same filename on every stable release, so this keeps pointing at the newest one): https://github.com/${{ github.repository }}/releases/latest/download/usage-badge-claude-ai.xpi"
 
-          if gh release view "$TAG" >/dev/null 2>&1; then
-            gh release upload "$TAG" "$XPI_PATH" --clobber
-            gh release edit "$TAG" \
-              --title "v${{ steps.vars.outputs.version }} (stable)" \
-              --notes "$NOTES" \
-              --target "$GITHUB_SHA"
-          else
-            gh release create "$TAG" "$XPI_PATH" \
-              --title "v${{ steps.vars.outputs.version }} (stable)" \
-              --notes "$NOTES" \
-              --target "$GITHUB_SHA"
-          fi
+          gh release create "$TAG" "$XPI_PATH" \
+            --title "v${VERSION} (stable)" \
+            --notes "$NOTES" \
+            --target "$GITHUB_SHA"
