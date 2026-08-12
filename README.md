@@ -38,7 +38,7 @@ that's more stable than DOM scraping.
     steps are cycled through.
   - Each of the three steps can be toggled on/off individually via
     checkbox in the popup ("Aktive Badge-Schritte"). If all three are off,
-    the badge shows `?`.
+    no badge is shown at all.
 - **Clicking the icon** opens a popup in a Claude-style dark theme (dark
   background, cards with rounded bars, terracotta accent color `#da7756`)
   with:
@@ -107,10 +107,14 @@ programs.firefox.policies.ExtensionSettings = {
 
 - The endpoint is a **private, undocumented API** of Anthropic — it can
   change at any time without notice. If it breaks, the badge shows `?`
-  and the tooltip shows an error hint; the parsing logic lives in
-  `background.js` (function `pollUsage`).
+  after 3 consecutive failed polls (a single transient failure still shows
+  the last known values) and the tooltip shows an error hint; the parsing
+  logic lives in `background.js` (function `pollUsage`). This only applies
+  if at least one badge step is active — if all three are switched off, no
+  badge is shown regardless of poll state.
 - The **org ID is editable in the popup** (field "Organisation-ID"), with
-  no default. Without an ID entered, the badge shows `?`. To find it:
+  no default. Without an ID entered, the badge shows `?` (unless all badge
+  steps are switched off). To find it:
   DevTools → Network → Fetch/XHR → open/reload the Usage settings page →
   copy the URL of the `/api/organizations/<ID>/usage` request, paste it
   into the popup.

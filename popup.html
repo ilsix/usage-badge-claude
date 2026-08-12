@@ -201,6 +201,13 @@
     color: var(--text-secondary);
     line-height: 1.4;
   }
+
+  .version {
+    margin-top: 0.4rem;
+    font-size: 0.65rem;
+    color: var(--text-secondary);
+    text-align: center;
+  }
 </style>
 </head>
 <body>
@@ -241,6 +248,7 @@
   <div class="status" id="status"></div>
   <div class="hint">Grün = Session, Gelb = Reset-Countdown, Blau = Woche. Änderungen werden sofort übernommen.</div>
   <div class="disclaimer">Unofficial add-on. Not affiliated with, endorsed by, or sponsored by Anthropic or Claude.</div>
+  <div class="version" id="version"></div>
 
   <script src="popup.js"></script>
 </body>
