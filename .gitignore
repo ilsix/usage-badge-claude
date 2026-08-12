@@ -1,0 +1,6 @@
+# Build artifacts (signed .xpi packages from web-ext sign)
+web-ext-artifacts/
+*.xpi
+
+# Local web-ext signing state
+.amo-upload-uuid

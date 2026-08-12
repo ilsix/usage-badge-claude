@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>Usage Badge for Claude.ai</title>
+<style>
+  :root {
+    --bg: #1a1a1a;
+    --surface: #232323;
+    --surface-hover: #2c2c2c;
+    --border: rgba(255, 255, 255, 0.08);
+    --text: #ece9e2;
+    --text-secondary: #9c9c96;
+    --accent: #da7756;
+    --track: rgba(255, 255, 255, 0.08);
+    --radius: 10px;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    width: 300px;
+    margin: 0;
+    padding: 1rem;
+    font-size: 13px;
+  }
+
+  h1 {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin: 0 0 0.85rem;
+  }
+
+  h1 img { width: 18px; height: 18px; }
+
+  .limit-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 0.6rem 0.7rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .limit-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 0.35rem;
+  }
+
+  .limit-name { font-size: 0.83rem; color: var(--text); }
+  .limit-percent { font-size: 0.83rem; color: var(--text-secondary); }
+
+  .limit-bar-track {
+    height: 6px;
+    border-radius: 999px;
+    background: var(--track);
+    overflow: hidden;
+    margin-bottom: 0.3rem;
+  }
+
+  .limit-bar-fill {
+    height: 100%;
+    border-radius: 999px;
+    background: var(--accent);
+  }
+
+  .limit-reset { font-size: 0.72rem; color: var(--text-secondary); }
+
+  .updated {
+    font-size: 0.72rem;
+    color: var(--text-secondary);
+    margin: 0.4rem 0 0.75rem;
+  }
+
+  button#refresh {
+    width: 100%;
+    background: var(--surface);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 0.45rem;
+    font-size: 0.82rem;
+    cursor: pointer;
+    margin-bottom: 1rem;
+    transition: background 0.15s;
+  }
+
+  button#refresh:hover { background: var(--surface-hover); }
+  button#refresh:disabled { opacity: 0.6; cursor: default; }
+
+  hr {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 0.9rem 0;
+  }
+
+  label {
+    display: block;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.35rem;
+  }
+
+  .row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+  }
+
+  input[type="number"] {
+    width: 4.5rem;
+    padding: 0.3rem 0.4rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-size: 0.82rem;
+  }
+
+  input[type="text"],
+  input[type="password"] {
+    flex: 1;
+    min-width: 0;
+    padding: 0.3rem 0.4rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-size: 0.78rem;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+
+  input[type="number"]:focus,
+  input[type="text"]:focus,
+  input[type="password"]:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+
+  .icon-btn {
+    flex-shrink: 0;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 0.3rem 0.6rem;
+    font-size: 0.72rem;
+    white-space: nowrap;
+    transition: background 0.15s;
+  }
+
+  .icon-btn:hover { background: var(--surface-hover); color: var(--text); }
+
+  .checkbox-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .checkbox-item {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.8rem;
+    color: var(--text);
+    cursor: pointer;
+  }
+
+  .checkbox-item input[type="checkbox"] {
+    accent-color: var(--accent);
+    cursor: pointer;
+  }
+
+  .status {
+    font-size: 0.78rem;
+    color: var(--accent);
+    min-height: 1.1em;
+  }
+
+  .hint {
+    margin-top: 0.4rem;
+    font-size: 0.72rem;
+    color: var(--text-secondary);
+  }
+
+  .disclaimer {
+    margin-top: 0.6rem;
+    padding-top: 0.6rem;
+    border-top: 1px solid var(--border);
+    font-size: 0.68rem;
+    color: var(--text-secondary);
+    line-height: 1.4;
+  }
+</style>
+</head>
+<body>
+  <h1><img src="icon.svg" alt=""> Usage Badge for Claude.ai</h1>
+
+  <div id="limits">Lade…</div>
+  <div class="updated" id="updated"></div>
+
+  <button id="refresh">Jetzt aktualisieren</button>
+
+  <hr>
+
+  <label for="interval">Wechsel-Intervall Badge (Session ⇄ Reset ⇄ Woche), in Sekunden:</label>
+  <div class="row">
+    <input type="number" id="interval" min="2" max="3600" step="1">
+    <span>Sekunden</span>
+  </div>
+
+  <label>Aktive Badge-Schritte:</label>
+  <div class="checkbox-group">
+    <label class="checkbox-item"><input type="checkbox" id="showSession"> Session %</label>
+    <label class="checkbox-item"><input type="checkbox" id="showSessionReset"> Reset-Countdown (Stunden)</label>
+    <label class="checkbox-item"><input type="checkbox" id="showWeek"> Woche %</label>
+  </div>
+
+  <label for="refreshSeconds">Aktualisierungs-Intervall der Daten:</label>
+  <div class="row">
+    <input type="number" id="refreshSeconds" min="10" max="3600" step="1">
+    <span>Sekunden</span>
+  </div>
+
+  <label for="orgId">Organisation-ID (aus der Usage-API-URL):</label>
+  <div class="row">
+    <input type="password" id="orgId" placeholder="z.B. 5c4c1190-994b-...">
+    <button type="button" id="toggleOrgId" class="icon-btn">Anzeigen</button>
+  </div>
+
+  <div class="status" id="status"></div>
+  <div class="hint">Grün = Session, Gelb = Reset-Countdown, Blau = Woche. Änderungen werden sofort übernommen.</div>
+  <div class="disclaimer">Unofficial add-on. Not affiliated with, endorsed by, or sponsored by Anthropic or Claude.</div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
