@@ -1,15 +1,6 @@
 name: Sign and publish XPI (main)
 
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - 'manifest.json'
-      - 'background.js'
-      - 'popup.html'
-      - 'popup.js'
-      - 'icon.svg'
   workflow_dispatch: {}
 
 permissions:

@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - 'claude/**'
+      - main
     paths:
       - 'manifest.json'
       - 'background.js'
