@@ -61,20 +61,27 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           TAG="${{ steps.vars.outputs.tag }}"
+          VERSION="${{ steps.vars.outputs.version }}"
           XPI_PATH="web-ext-artifacts/${{ steps.vars.outputs.xpi_name }}"
-          NOTES="Automated dev build from branch \`${GITHUB_REF_NAME}\` at commit ${GITHUB_SHA} (manifest version ${{ steps.vars.outputs.version }}).
+
+          TITLE="v${VERSION}-dev"
+          if [ "${GITHUB_REF_NAME}" != "main" ]; then
+            TITLE="v${VERSION}-dev (${GITHUB_REF_NAME})"
+          fi
+
+          NOTES="Automated **devbuild** from branch \`${GITHUB_REF_NAME}\` at commit ${GITHUB_SHA} (manifest version ${VERSION}).
 
           This is an **unsigned development build**, not suitable for permanent installation on release Firefox. Load it temporarily via \`about:debugging#/runtime/this-firefox\`, or use it with \`xpinstall.signatures.required=false\` / a force-installed Enterprise Policy."
 
           if gh release view "$TAG" >/dev/null 2>&1; then
             gh release upload "$TAG" "$XPI_PATH" --clobber
             gh release edit "$TAG" \
-              --title "Dev build: ${GITHUB_REF_NAME}" \
+              --title "$TITLE" \
               --notes "$NOTES" \
               --target "$GITHUB_SHA"
           else
             gh release create "$TAG" "$XPI_PATH" \
-              --title "Dev build: ${GITHUB_REF_NAME}" \
+              --title "$TITLE" \
               --notes "$NOTES" \
               --prerelease \
               --target "$GITHUB_SHA"

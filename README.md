@@ -104,7 +104,10 @@ A GitHub Actions workflow (`.github/workflows/build-dev-xpi.yml`) builds an
 branch that changes the extension source, and publishes it to a GitHub
 Release tagged `dev-<branch>` (e.g. `dev-main`) with a stable per-branch
 download link — no AMO involved, so it's fast and doesn't touch a real
-release. Good for grabbing a build to test without building locally.
+release. These are marked as GitHub pre-releases and titled `v<version>-dev`
+(with the branch name appended for anything other than `main`), so they're
+clearly distinguishable from the signed `v<version> (stable)` releases below.
+Good for grabbing a build to test without building locally.
 
 ## Permanent installation (signed, self-distributed)
 
@@ -115,12 +118,17 @@ addons.mozilla.org) via `web-ext sign`. A GitHub Actions workflow
 "Sign and publish XPI (main)" → Run workflow) rather than on every push,
 since each run consumes an AMO version slot (a version can only be submitted
 once) and creates a real, user-facing update — so it's a deliberate release
-step, not tied to the faster automatic dev-build loop below. The asset's
-filename and URL never change, so it always points to the latest signed
-build:
+step, not tied to the faster automatic dev-build loop above.
+
+Every successful run creates its own permanent release tagged `v<version>`
+(e.g. `v1.0.6`) — nothing gets overwritten, so the full release history stays
+browsable under [Releases](../../releases). The asset filename
+(`usage-badge-claude-ai.xpi`) is identical on every one of these releases, so
+GitHub's built-in "latest release" redirect always resolves to the newest
+one without any extra bookkeeping:
 
 ```
-https://github.com/ilsix/usage-badge-claude/releases/download/stable/usage-badge-claude-ai.xpi
+https://github.com/ilsix/usage-badge-claude/releases/latest/download/usage-badge-claude-ai.xpi
 ```
 
 The resulting signed `.xpi` can be installed permanently on regular release
@@ -132,7 +140,7 @@ NixOS/Home-Manager) using that stable URL directly as `install_url`, e.g.:
 programs.firefox.policies.ExtensionSettings = {
   "claude-usage@ilsix.email" = {
     installation_mode = "force_installed";
-    install_url = "https://github.com/ilsix/usage-badge-claude/releases/download/stable/usage-badge-claude-ai.xpi";
+    install_url = "https://github.com/ilsix/usage-badge-claude/releases/latest/download/usage-badge-claude-ai.xpi";
   };
 };
 ```
