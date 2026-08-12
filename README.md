@@ -87,14 +87,25 @@ reloaded. For permanent use, the extension needs to be signed (see below)
 or installed via `xpinstall.signatures.required=false` (Firefox
 Developer/Nightly) as a self-signed `.xpi`.
 
+A GitHub Actions workflow (`.github/workflows/build-dev-xpi.yml`) builds an
+**unsigned** `.xpi` automatically on every push to `main` or any `claude/**`
+branch that changes the extension source, and publishes it to a GitHub
+Release tagged `dev-<branch>` (e.g. `dev-main`) with a stable per-branch
+download link — no AMO involved, so it's fast and doesn't touch a real
+release. Good for grabbing a build to test without building locally.
+
 ## Permanent installation (signed, self-distributed)
 
 The extension is signed for self-distribution ("unlisted" channel on
 addons.mozilla.org) via `web-ext sign`. A GitHub Actions workflow
-(`.github/workflows/sign-release-xpi.yml`) does this automatically on every
-push to `main` that changes the extension source, and publishes the signed
-`.xpi` to a GitHub Release. The asset's filename and URL never change, so it
-always points to the latest signed build:
+(`.github/workflows/sign-release-xpi.yml`) does this and publishes the signed
+`.xpi` to a GitHub Release. It's triggered manually (Actions →
+"Sign and publish XPI (main)" → Run workflow) rather than on every push,
+since each run consumes an AMO version slot (a version can only be submitted
+once) and creates a real, user-facing update — so it's a deliberate release
+step, not tied to the faster automatic dev-build loop below. The asset's
+filename and URL never change, so it always points to the latest signed
+build:
 
 ```
 https://github.com/ilsix/usage-badge-claude/releases/download/stable/usage-badge-claude-ai.xpi
