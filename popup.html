@@ -138,9 +138,21 @@
     font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   }
 
+  select {
+    flex: 1;
+    min-width: 0;
+    padding: 0.3rem 0.4rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-size: 0.82rem;
+  }
+
   input[type="number"]:focus,
   input[type="text"]:focus,
-  input[type="password"]:focus {
+  input[type="password"]:focus,
+  select:focus {
     outline: none;
     border-color: var(--accent);
   }
@@ -220,6 +232,15 @@
 
   <hr>
 
+  <label for="language" data-i18n="languageLabel">Language:</label>
+  <div class="row">
+    <select id="language">
+      <option value="auto" data-i18n="languageAuto">Automatic (browser)</option>
+      <option value="en">English</option>
+      <option value="de">Deutsch</option>
+    </select>
+  </div>
+
   <label for="interval" data-i18n="toggleIntervalLabel">Badge rotation interval (Session ⇄ Reset ⇄ Week), in seconds:</label>
   <div class="row">
     <input type="number" id="interval" min="2" max="3600" step="1">
@@ -250,6 +271,7 @@
   <div class="disclaimer" data-i18n="disclaimer">Unofficial add-on. Not affiliated with, endorsed by, or sponsored by Anthropic or Claude.</div>
   <div class="version" id="version"></div>
 
+  <script src="i18n.js"></script>
   <script src="popup.js"></script>
 </body>
 </html>

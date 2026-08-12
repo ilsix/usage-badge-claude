@@ -6,14 +6,26 @@ Shows your remaining Claude.ai usage as a badge number on the toolbar icon.
 
 ## Localization
 
-The extension UI is localized via the standard WebExtension `browser.i18n`
-API (`_locales/en`, `_locales/de`). The displayed language is picked up
-automatically from the browser's UI language (`browser.i18n.getUILanguage()`)
-— English is the default (`default_locale` in `manifest.json`), with a
-German translation available. There is no in-extension language switch;
-change the browser's language to switch the extension's language too. Dates,
-times and decimal numbers (e.g. the hours-until-reset badge value) are also
-formatted using the browser's UI language via `Intl`/`toLocaleString`.
+The popup and badge tooltip are localized via a small runtime translation
+layer (`i18n.js`, shared by `popup.js` and `background.js`) with English and
+German translation tables. A "Language" dropdown in the popup lets you pick:
+
+- **Automatic (browser)** (default) — follows the browser's UI language
+  (`browser.i18n.getUILanguage()`), falling back to English when it isn't
+  German.
+- **English** / **Deutsch** — pins the UI to that language regardless of the
+  browser's language.
+
+The choice is stored via `browser.storage.local` (`language` key) and applies
+instantly to the popup and to the toolbar tooltip, without reloading the
+extension. Dates, times and decimal numbers (e.g. the hours-until-reset
+badge value) are formatted to match via `Intl`/`toLocaleString`.
+
+Separately, the extension's name/description shown in Firefox's Add-ons
+Manager (`about:addons`) still use the standard WebExtension `browser.i18n`
+system (`_locales/en`, `_locales/de`, `default_locale` in `manifest.json`)
+and always follow the browser's UI language — Firefox controls that
+independently and it isn't affected by the in-popup language dropdown.
 
 ## How it works
 

@@ -16,25 +16,24 @@ const toggleOrgIdBtn = document.getElementById("toggleOrgId");
 const showSessionInput = document.getElementById("showSession");
 const showSessionResetInput = document.getElementById("showSessionReset");
 const showWeekInput = document.getElementById("showWeek");
+const languageInput = document.getElementById("language");
 const status = document.getElementById("status");
 const versionEl = document.getElementById("version");
 
 function localizePage() {
-  document.documentElement.lang = browser.i18n.getUILanguage();
+  document.documentElement.lang = localeTag();
   document.querySelectorAll("[data-i18n]").forEach((el) => {
-    const msg = browser.i18n.getMessage(el.getAttribute("data-i18n"));
-    if (msg) el.textContent = msg;
+    el.textContent = t(el.getAttribute("data-i18n"));
   });
   document.querySelectorAll("[data-i18n-placeholder]").forEach((el) => {
-    const msg = browser.i18n.getMessage(el.getAttribute("data-i18n-placeholder"));
-    if (msg) el.placeholder = msg;
+    el.placeholder = t(el.getAttribute("data-i18n-placeholder"));
   });
 }
 
 function formatResetTime(iso) {
-  if (!iso) return browser.i18n.getMessage("unknown");
+  if (!iso) return t("unknown");
   try {
-    return new Date(iso).toLocaleString(browser.i18n.getUILanguage(), {
+    return new Date(iso).toLocaleString(localeTag(), {
       weekday: "short",
       hour: "2-digit",
       minute: "2-digit"
@@ -46,7 +45,7 @@ function formatResetTime(iso) {
 
 function renderLimits(data) {
   if (!data || !data.limits || !data.limits.length) {
-    limitsEl.textContent = browser.i18n.getMessage("noData");
+    limitsEl.textContent = t("noData");
     updatedEl.textContent = "";
     return;
   }
@@ -76,7 +75,7 @@ function renderLimits(data) {
 
     const reset = document.createElement("div");
     reset.className = "limit-reset";
-    reset.textContent = browser.i18n.getMessage("limitReset", [formatResetTime(l.resetsAt)]);
+    reset.textContent = t("limitReset", formatResetTime(l.resetsAt));
 
     card.appendChild(top);
     card.appendChild(track);
@@ -84,11 +83,11 @@ function renderLimits(data) {
     limitsEl.appendChild(card);
   }
 
-  const stamp = new Date(data.timestamp).toLocaleTimeString(browser.i18n.getUILanguage(), {
+  const stamp = new Date(data.timestamp).toLocaleTimeString(localeTag(), {
     hour: "2-digit",
     minute: "2-digit"
   });
-  updatedEl.textContent = browser.i18n.getMessage("updatedAt", [stamp]);
+  updatedEl.textContent = t("updatedAt", stamp);
 }
 
 function loadLimits() {
@@ -99,18 +98,18 @@ function loadLimits() {
 
 refreshBtn.addEventListener("click", () => {
   refreshBtn.disabled = true;
-  refreshBtn.textContent = browser.i18n.getMessage("refreshing");
+  refreshBtn.textContent = t("refreshing");
   browser.runtime.sendMessage({ type: "manual-refresh" }).finally(() => {
     setTimeout(() => {
       loadLimits();
       refreshBtn.disabled = false;
-      refreshBtn.textContent = browser.i18n.getMessage("refreshNow");
+      refreshBtn.textContent = t("refreshNow");
     }, 500);
   });
 });
 
 browser.storage.local
-  .get(["toggleSeconds", "refreshSeconds", "orgId", "showSession", "showSessionReset", "showWeek"])
+  .get(["toggleSeconds", "refreshSeconds", "orgId", "showSession", "showSessionReset", "showWeek", "language"])
   .then((res) => {
     intervalInput.value = res.toggleSeconds > 0 ? res.toggleSeconds : DEFAULT_TOGGLE_SECONDS;
     refreshInput.value = res.refreshSeconds > 0 ? res.refreshSeconds : DEFAULT_REFRESH_SECONDS;
@@ -118,6 +117,10 @@ browser.storage.local
     showSessionInput.checked = res.showSession !== false;
     showSessionResetInput.checked = res.showSessionReset !== false;
     showWeekInput.checked = res.showWeek !== false;
+    languageInput.value = res.language === "en" || res.language === "de" ? res.language : "auto";
+    setLanguagePreference(languageInput.value);
+    localizePage();
+    loadLimits();
   });
 
 let statusTimeout = null;
@@ -135,7 +138,7 @@ intervalInput.addEventListener("input", () => {
   clearTimeout(toggleSaveTimeout);
   toggleSaveTimeout = setTimeout(() => {
     browser.storage.local.set({ toggleSeconds: value }).then(() => {
-      showStatus(browser.i18n.getMessage("savedToggleInterval", [String(value)]));
+      showStatus(t("savedToggleInterval", value));
     });
   }, 300);
 });
@@ -148,7 +151,7 @@ refreshInput.addEventListener("input", () => {
   clearTimeout(refreshSaveTimeout);
   refreshSaveTimeout = setTimeout(() => {
     browser.storage.local.set({ refreshSeconds: value }).then(() => {
-      showStatus(browser.i18n.getMessage("savedRefreshInterval", [String(value)]));
+      showStatus(t("savedRefreshInterval", value));
     });
   }, 300);
 });
@@ -156,7 +159,7 @@ refreshInput.addEventListener("input", () => {
 toggleOrgIdBtn.addEventListener("click", () => {
   const isHidden = orgIdInput.type === "password";
   orgIdInput.type = isHidden ? "text" : "password";
-  toggleOrgIdBtn.textContent = browser.i18n.getMessage(isHidden ? "hide" : "show");
+  toggleOrgIdBtn.textContent = t(isHidden ? "hide" : "show");
 });
 
 let orgIdSaveTimeout = null;
@@ -166,30 +169,38 @@ orgIdInput.addEventListener("input", () => {
   clearTimeout(orgIdSaveTimeout);
   orgIdSaveTimeout = setTimeout(() => {
     browser.storage.local.set({ orgId: value }).then(() => {
-      showStatus(browser.i18n.getMessage(value ? "savedOrgId" : "clearedOrgId"));
+      showStatus(t(value ? "savedOrgId" : "clearedOrgId"));
     });
   }, 500);
 });
 
 showSessionInput.addEventListener("change", () => {
   browser.storage.local.set({ showSession: showSessionInput.checked }).then(() => {
-    showStatus(browser.i18n.getMessage("saved"));
+    showStatus(t("saved"));
   });
 });
 
 showSessionResetInput.addEventListener("change", () => {
   browser.storage.local.set({ showSessionReset: showSessionResetInput.checked }).then(() => {
-    showStatus(browser.i18n.getMessage("saved"));
+    showStatus(t("saved"));
   });
 });
 
 showWeekInput.addEventListener("change", () => {
   browser.storage.local.set({ showWeek: showWeekInput.checked }).then(() => {
-    showStatus(browser.i18n.getMessage("saved"));
+    showStatus(t("saved"));
+  });
+});
+
+languageInput.addEventListener("change", () => {
+  const value = languageInput.value;
+  browser.storage.local.set({ language: value }).then(() => {
+    setLanguagePreference(value);
+    localizePage();
+    toggleOrgIdBtn.textContent = t(orgIdInput.type === "password" ? "show" : "hide");
+    loadLimits();
+    showStatus(t("saved"));
   });
 });
 
 versionEl.textContent = `v${browser.runtime.getManifest().version}`;
-
-localizePage();
-loadLimits();
