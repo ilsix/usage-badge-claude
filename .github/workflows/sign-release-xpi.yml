@@ -80,12 +80,12 @@ jobs:
           if gh release view "$TAG" >/dev/null 2>&1; then
             gh release upload "$TAG" "$XPI_PATH" --clobber
             gh release edit "$TAG" \
-              --title "Usage Badge for Claude.ai v${{ steps.vars.outputs.version }} (stable)" \
+              --title "v${{ steps.vars.outputs.version }} (stable)" \
               --notes "$NOTES" \
               --target "$GITHUB_SHA"
           else
             gh release create "$TAG" "$XPI_PATH" \
-              --title "Usage Badge for Claude.ai v${{ steps.vars.outputs.version }} (stable)" \
+              --title "v${{ steps.vars.outputs.version }} (stable)" \
               --notes "$NOTES" \
               --target "$GITHUB_SHA"
           fi
