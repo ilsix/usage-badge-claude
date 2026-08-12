@@ -17,6 +17,7 @@ const showSessionInput = document.getElementById("showSession");
 const showSessionResetInput = document.getElementById("showSessionReset");
 const showWeekInput = document.getElementById("showWeek");
 const status = document.getElementById("status");
+const versionEl = document.getElementById("version");
 
 function formatResetTime(iso) {
   if (!iso) return "unbekannt";
@@ -174,5 +175,7 @@ showWeekInput.addEventListener("change", () => {
     showStatus("Gespeichert");
   });
 });
+
+versionEl.textContent = `v${browser.runtime.getManifest().version}`;
 
 loadLimits();
