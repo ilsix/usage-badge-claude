@@ -52,9 +52,9 @@ function summarize(data) {
 }
 
 function formatResetTime(iso) {
-  if (!iso) return browser.i18n.getMessage("unknown");
+  if (!iso) return t("unknown");
   try {
-    return new Date(iso).toLocaleString(browser.i18n.getUILanguage(), {
+    return new Date(iso).toLocaleString(localeTag(), {
       weekday: "short",
       hour: "2-digit",
       minute: "2-digit"
@@ -65,12 +65,12 @@ function formatResetTime(iso) {
 }
 
 // Stunden bis Reset, eine Nachkommastelle, Dezimaltrennzeichen je nach
-// Browser-Sprache (z.B. "4.8" auf Englisch, "4,8" auf Deutsch)
+// gewählter Sprache (z.B. "4.8" auf Englisch, "4,8" auf Deutsch)
 function formatHoursUntil(iso) {
   if (!iso) return null;
   const diffMs = new Date(iso).getTime() - Date.now();
   const hours = Math.max(0, diffMs / 3600000);
-  return new Intl.NumberFormat(browser.i18n.getUILanguage(), {
+  return new Intl.NumberFormat(localeTag(), {
     minimumFractionDigits: 1,
     maximumFractionDigits: 1
   }).format(hours);
@@ -78,24 +78,19 @@ function formatHoursUntil(iso) {
 
 function setTooltip() {
   if (!lastData) return;
-  const stamp = new Date(lastData.timestamp).toLocaleTimeString(browser.i18n.getUILanguage(), {
+  const stamp = new Date(lastData.timestamp).toLocaleTimeString(localeTag(), {
     hour: "2-digit",
     minute: "2-digit"
   });
   const lines = lastData.limits.map((l) =>
-    browser.i18n.getMessage("tooltipLine", [l.kind, l.group, String(l.percent), formatResetTime(l.resetsAt)])
+    t("tooltipLine", l.kind, l.group, l.percent, formatResetTime(l.resetsAt))
   );
   const activeSteps = [];
-  if (showSession) activeSteps.push(browser.i18n.getMessage("tooltipStepSession"));
-  if (showSessionReset) activeSteps.push(browser.i18n.getMessage("tooltipStepSessionReset"));
-  if (showWeek) activeSteps.push(browser.i18n.getMessage("tooltipStepWeek"));
-  const rotationDesc = activeSteps.length ? activeSteps.join(", ") : browser.i18n.getMessage("tooltipNoSteps");
-  const title = browser.i18n.getMessage("tooltipTitle", [
-    String(toggleSeconds),
-    rotationDesc,
-    String(refreshSeconds),
-    stamp
-  ]);
+  if (showSession) activeSteps.push(t("tooltipStepSession"));
+  if (showSessionReset) activeSteps.push(t("tooltipStepSessionReset"));
+  if (showWeek) activeSteps.push(t("tooltipStepWeek"));
+  const rotationDesc = activeSteps.length ? activeSteps.join(", ") : t("tooltipNoSteps");
+  const title = t("tooltipTitle", toggleSeconds, rotationDesc, refreshSeconds, stamp);
   browser.browserAction.setTitle({ title: `${title}\n${lines.join("\n")}` });
 }
 
@@ -179,7 +174,7 @@ async function pollUsage() {
   if (!orgId) {
     renderBadge();
     browser.browserAction.setTitle({
-      title: browser.i18n.getMessage("noOrgIdTitle")
+      title: t("noOrgIdTitle")
     });
     return;
   }
@@ -200,7 +195,7 @@ async function pollUsage() {
     console.error("Claude Usage: Poll fehlgeschlagen", e);
     consecutiveFailures++;
     browser.browserAction.setTitle({
-      title: browser.i18n.getMessage("pollFailedTitle")
+      title: t("pollFailedTitle")
     });
     if (consecutiveFailures >= MAX_CONSECUTIVE_FAILURES) {
       dataStale = true;
@@ -248,6 +243,12 @@ browser.storage.onChanged.addListener((changes, area) => {
     rotationIndex = 0;
     renderBadge();
   }
+
+  if (changes.language) {
+    setLanguagePreference(changes.language.newValue);
+    renderBadge();
+    setTooltip();
+  }
 });
 
 // Manuelles Refresh über den Button im Popup
@@ -258,7 +259,7 @@ browser.runtime.onMessage.addListener((msg) => {
 browser.runtime.onStartup.addListener(() => pollUsage());
 browser.runtime.onInstalled.addListener(() => pollUsage());
 
-// Beim Start: gespeicherte Intervalle/Org-ID/Checkboxen + letzten bekannten Stand laden
+// Beim Start: gespeicherte Intervalle/Org-ID/Checkboxen/Sprache + letzten bekannten Stand laden
 browser.storage.local
   .get([
     "lastUsageData",
@@ -267,7 +268,8 @@ browser.storage.local
     "orgId",
     "showSession",
     "showSessionReset",
-    "showWeek"
+    "showWeek",
+    "language"
   ])
   .then((res) => {
     if (res.toggleSeconds > 0) toggleSeconds = res.toggleSeconds;
@@ -276,6 +278,7 @@ browser.storage.local
     if (typeof res.showSession === "boolean") showSession = res.showSession;
     if (typeof res.showSessionReset === "boolean") showSessionReset = res.showSessionReset;
     if (typeof res.showWeek === "boolean") showWeek = res.showWeek;
+    setLanguagePreference(res.language);
     if (res.lastUsageData) lastData = res.lastUsageData;
     startToggle();
     renderBadge();

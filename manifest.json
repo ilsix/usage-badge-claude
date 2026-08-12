@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
   "name": "Usage Badge for Claude.ai",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "description": "__MSG_extDescription__",
   "default_locale": "en",
   "author": "dev.ilsix@ilsix.email",
@@ -14,7 +14,7 @@
     "https://claude.ai/*"
   ],
   "background": {
-    "scripts": ["background.js"],
+    "scripts": ["i18n.js", "background.js"],
     "persistent": true
   },
   "browser_action": {
