@@ -79,17 +79,26 @@ Developer/Nightly) as a self-signed `.xpi`.
 ## Permanent installation (signed, self-distributed)
 
 The extension is signed for self-distribution ("unlisted" channel on
-addons.mozilla.org) via `web-ext sign`. The resulting signed `.xpi` can be
-installed permanently on regular release Firefox, and can also be
-force-installed via Firefox Enterprise Policies
+addons.mozilla.org) via `web-ext sign`. A GitHub Actions workflow
+(`.github/workflows/sign-release-xpi.yml`) does this automatically on every
+push to `main` that changes the extension source, and publishes the signed
+`.xpi` to a GitHub Release. The asset's filename and URL never change, so it
+always points to the latest signed build:
+
+```
+https://github.com/ilsix/usage-badge-claude/releases/download/stable/usage-badge-claude-ai.xpi
+```
+
+The resulting signed `.xpi` can be installed permanently on regular release
+Firefox, and can also be force-installed via Firefox Enterprise Policies
 (`policies.json` / `programs.firefox.policies.ExtensionSettings` on
-NixOS/Home-Manager), e.g.:
+NixOS/Home-Manager) using that stable URL directly as `install_url`, e.g.:
 
 ```nix
 programs.firefox.policies.ExtensionSettings = {
   "claude-usage@ilsix.email" = {
     installation_mode = "force_installed";
-    install_url = "file:///path/to/usage-badge-for-claude-ai-<version>.xpi";
+    install_url = "https://github.com/ilsix/usage-badge-claude/releases/download/stable/usage-badge-claude-ai.xpi";
   };
 };
 ```

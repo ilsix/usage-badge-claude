@@ -13,7 +13,7 @@ on:
   workflow_dispatch: {}
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   sign:
@@ -44,10 +44,38 @@ jobs:
             --api-secret "${{ secrets.AMO_API_SECRET }}" \
             --ignore-files 'README.md' '.gitignore' '.github/**'
 
+      - name: Package as stable release asset
+        run: |
+          XPI_FILE=$(ls web-ext-artifacts/*.xpi | head -n1)
+          mv "$XPI_FILE" web-ext-artifacts/usage-badge-claude-ai.xpi
+
       - name: Upload signed XPI as workflow artifact
         uses: actions/upload-artifact@v4
         with:
           name: usage-badge-claude-ai-${{ steps.vars.outputs.version }}-signed
-          path: web-ext-artifacts/*.xpi
+          path: web-ext-artifacts/usage-badge-claude-ai.xpi
           retention-days: 30
           if-no-files-found: error
+
+      - name: Create or update stable release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="stable"
+          XPI_PATH="web-ext-artifacts/usage-badge-claude-ai.xpi"
+          NOTES="Signed build from \`main\` at commit ${GITHUB_SHA} (manifest version ${{ steps.vars.outputs.version }}), submitted to AMO on the unlisted channel.
+
+          This asset's URL never changes — it always points to the latest signed build, so it can be used as a permanent \`install_url\` for Firefox Enterprise Policies (\`policies.json\` / \`programs.firefox.policies.ExtensionSettings\`)."
+
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" "$XPI_PATH" --clobber
+            gh release edit "$TAG" \
+              --title "Usage Badge for Claude.ai v${{ steps.vars.outputs.version }} (stable)" \
+              --notes "$NOTES" \
+              --target "$GITHUB_SHA"
+          else
+            gh release create "$TAG" "$XPI_PATH" \
+              --title "Usage Badge for Claude.ai v${{ steps.vars.outputs.version }} (stable)" \
+              --notes "$NOTES" \
+              --target "$GITHUB_SHA"
+          fi
