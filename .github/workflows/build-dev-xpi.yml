@@ -1,0 +1,80 @@
+name: Build dev XPI
+
+on:
+  push:
+    branches:
+      - 'claude/**'
+    paths:
+      - 'manifest.json'
+      - 'background.js'
+      - 'popup.html'
+      - 'popup.js'
+      - 'icon.svg'
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Determine build metadata
+        id: vars
+        run: |
+          VERSION=$(node -p "require('./manifest.json').version")
+          BRANCH_SLUG=$(echo "${GITHUB_REF_NAME}" | tr '/' '-')
+          SHORT_SHA=$(git rev-parse --short HEAD)
+          XPI_NAME="usage-badge-claude-ai-dev-${BRANCH_SLUG}.xpi"
+          {
+            echo "version=$VERSION"
+            echo "branch_slug=$BRANCH_SLUG"
+            echo "short_sha=$SHORT_SHA"
+            echo "xpi_name=$XPI_NAME"
+            echo "tag=dev-${BRANCH_SLUG}"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Build extension
+        run: |
+          npx --yes web-ext@latest build \
+            --source-dir . \
+            --artifacts-dir web-ext-artifacts \
+            --overwrite-dest \
+            --ignore-files 'README.md' '.gitignore' '.github/**'
+
+      - name: Package as .xpi
+        run: |
+          ZIP_FILE=$(ls web-ext-artifacts/*.zip | head -n1)
+          mv "$ZIP_FILE" "web-ext-artifacts/${{ steps.vars.outputs.xpi_name }}"
+
+      - name: Create or update dev release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="${{ steps.vars.outputs.tag }}"
+          XPI_PATH="web-ext-artifacts/${{ steps.vars.outputs.xpi_name }}"
+          NOTES="Automated dev build from branch \`${GITHUB_REF_NAME}\` at commit ${GITHUB_SHA} (manifest version ${{ steps.vars.outputs.version }}).
+
+          This is an **unsigned development build**, not suitable for permanent installation on release Firefox. Load it temporarily via \`about:debugging#/runtime/this-firefox\`, or use it with \`xpinstall.signatures.required=false\` / a force-installed Enterprise Policy."
+
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" "$XPI_PATH" --clobber
+            gh release edit "$TAG" \
+              --title "Dev build: ${GITHUB_REF_NAME}" \
+              --notes "$NOTES" \
+              --target "$GITHUB_SHA"
+          else
+            gh release create "$TAG" "$XPI_PATH" \
+              --title "Dev build: ${GITHUB_REF_NAME}" \
+              --notes "$NOTES" \
+              --prerelease \
+              --target "$GITHUB_SHA"
+          fi
