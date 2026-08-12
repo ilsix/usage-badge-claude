@@ -34,6 +34,16 @@ jobs:
           VERSION=$(node -p "require('./manifest.json').version")
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
+      - name: Verify AMO credentials are present
+        env:
+          AMO_API_KEY: ${{ secrets.AMO_API_KEY }}
+          AMO_API_SECRET: ${{ secrets.AMO_API_SECRET }}
+        run: |
+          if [ -z "$AMO_API_KEY" ] || [ -z "$AMO_API_SECRET" ]; then
+            echo "::error::AMO_API_KEY and/or AMO_API_SECRET resolved empty. Check that both are set as secrets on the 'main' environment (Settings -> Environments -> main) and that the values were actually saved."
+            exit 1
+          fi
+
       - name: Sign and submit to AMO (unlisted)
         run: |
           npx --yes web-ext@latest sign \
