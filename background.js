@@ -52,9 +52,9 @@ function summarize(data) {
 }
 
 function formatResetTime(iso) {
-  if (!iso) return "unbekannt";
+  if (!iso) return browser.i18n.getMessage("unknown");
   try {
-    return new Date(iso).toLocaleString("de-DE", {
+    return new Date(iso).toLocaleString(browser.i18n.getUILanguage(), {
       weekday: "short",
       hour: "2-digit",
       minute: "2-digit"
@@ -64,31 +64,39 @@ function formatResetTime(iso) {
   }
 }
 
-// Stunden bis Reset, eine Nachkommastelle, Komma statt Punkt (de-DE), z.B. "4,8"
+// Stunden bis Reset, eine Nachkommastelle, Dezimaltrennzeichen je nach
+// Browser-Sprache (z.B. "4.8" auf Englisch, "4,8" auf Deutsch)
 function formatHoursUntil(iso) {
   if (!iso) return null;
   const diffMs = new Date(iso).getTime() - Date.now();
   const hours = Math.max(0, diffMs / 3600000);
-  return hours.toFixed(1).replace(".", ",");
+  return new Intl.NumberFormat(browser.i18n.getUILanguage(), {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1
+  }).format(hours);
 }
 
 function setTooltip() {
   if (!lastData) return;
-  const stamp = new Date(lastData.timestamp).toLocaleTimeString("de-DE", {
+  const stamp = new Date(lastData.timestamp).toLocaleTimeString(browser.i18n.getUILanguage(), {
     hour: "2-digit",
     minute: "2-digit"
   });
-  const lines = lastData.limits.map(
-    (l) => `${l.kind} (${l.group}): ${l.percent}% verwendet – Reset ${formatResetTime(l.resetsAt)}`
+  const lines = lastData.limits.map((l) =>
+    browser.i18n.getMessage("tooltipLine", [l.kind, l.group, String(l.percent), formatResetTime(l.resetsAt)])
   );
   const activeSteps = [];
-  if (showSession) activeSteps.push("Session % (grün)");
-  if (showSessionReset) activeSteps.push("Stunden bis Session-Reset (gelb)");
-  if (showWeek) activeSteps.push("Woche % (blau)");
-  const rotationDesc = activeSteps.length ? activeSteps.join(", ") : "keine Schritte aktiv";
-  browser.browserAction.setTitle({
-    title: `Claude Usage – Badge wechselt alle ${toggleSeconds}s zwischen: ${rotationDesc}. Daten alle ${refreshSeconds}s aktualisiert (Stand ${stamp})\n${lines.join("\n")}`
-  });
+  if (showSession) activeSteps.push(browser.i18n.getMessage("tooltipStepSession"));
+  if (showSessionReset) activeSteps.push(browser.i18n.getMessage("tooltipStepSessionReset"));
+  if (showWeek) activeSteps.push(browser.i18n.getMessage("tooltipStepWeek"));
+  const rotationDesc = activeSteps.length ? activeSteps.join(", ") : browser.i18n.getMessage("tooltipNoSteps");
+  const title = browser.i18n.getMessage("tooltipTitle", [
+    String(toggleSeconds),
+    rotationDesc,
+    String(refreshSeconds),
+    stamp
+  ]);
+  browser.browserAction.setTitle({ title: `${title}\n${lines.join("\n")}` });
 }
 
 // Baut die Reihenfolge der Badge-Schritte je nach vorhandenen Daten und den
@@ -171,7 +179,7 @@ async function pollUsage() {
   if (!orgId) {
     renderBadge();
     browser.browserAction.setTitle({
-      title: "Claude Usage: keine Organisation-ID gesetzt (im Popup unter Einstellungen eintragen)"
+      title: browser.i18n.getMessage("noOrgIdTitle")
     });
     return;
   }
@@ -192,7 +200,7 @@ async function pollUsage() {
     console.error("Claude Usage: Poll fehlgeschlagen", e);
     consecutiveFailures++;
     browser.browserAction.setTitle({
-      title: "Claude Usage: Aktualisierung fehlgeschlagen (nicht eingeloggt oder API-Antwort geändert)"
+      title: browser.i18n.getMessage("pollFailedTitle")
     });
     if (consecutiveFailures >= MAX_CONSECUTIVE_FAILURES) {
       dataStale = true;

@@ -1,0 +1,154 @@
+{
+  "extDescription": {
+    "message": "Shows your remaining Claude.ai usage as a toolbar badge. Unofficial, not affiliated with, endorsed by, or sponsored by Anthropic.",
+    "description": "Extension description shown in the browser's add-on manager"
+  },
+  "loading": {
+    "message": "Loading…",
+    "description": "Placeholder shown in the popup while usage data is loading"
+  },
+  "noData": {
+    "message": "No data – not logged in?",
+    "description": "Shown when there is no usage data to display"
+  },
+  "refreshNow": {
+    "message": "Refresh now",
+    "description": "Label of the manual refresh button"
+  },
+  "refreshing": {
+    "message": "Refreshing…",
+    "description": "Label of the manual refresh button while a refresh is in progress"
+  },
+  "toggleIntervalLabel": {
+    "message": "Badge rotation interval (Session ⇄ Reset ⇄ Week), in seconds:",
+    "description": "Label for the badge rotation interval input"
+  },
+  "seconds": {
+    "message": "seconds",
+    "description": "Unit label next to the interval inputs"
+  },
+  "activeBadgeStepsLabel": {
+    "message": "Active badge steps:",
+    "description": "Label above the badge step checkboxes"
+  },
+  "stepSession": {
+    "message": "Session %",
+    "description": "Checkbox label for the session percentage badge step"
+  },
+  "stepSessionReset": {
+    "message": "Reset countdown (hours)",
+    "description": "Checkbox label for the session reset countdown badge step"
+  },
+  "stepWeek": {
+    "message": "Week %",
+    "description": "Checkbox label for the weekly percentage badge step"
+  },
+  "refreshIntervalLabel": {
+    "message": "Data refresh interval:",
+    "description": "Label for the data refresh interval input"
+  },
+  "orgIdLabel": {
+    "message": "Organization ID (from the usage API URL):",
+    "description": "Label for the organization ID input"
+  },
+  "orgIdPlaceholder": {
+    "message": "e.g. 5c4c1190-994b-...",
+    "description": "Placeholder text for the organization ID input"
+  },
+  "show": {
+    "message": "Show",
+    "description": "Button label to reveal the organization ID"
+  },
+  "hide": {
+    "message": "Hide",
+    "description": "Button label to hide the organization ID"
+  },
+  "hintText": {
+    "message": "Green = Session, Yellow = Reset countdown, Blue = Week. Changes apply instantly.",
+    "description": "Hint text below the settings explaining the badge colors"
+  },
+  "disclaimer": {
+    "message": "Unofficial add-on. Not affiliated with, endorsed by, or sponsored by Anthropic or Claude.",
+    "description": "Disclaimer shown at the bottom of the popup"
+  },
+  "unknown": {
+    "message": "unknown",
+    "description": "Fallback text when a reset time is unavailable"
+  },
+  "updatedAt": {
+    "message": "Updated: $TIME$",
+    "description": "Shows the timestamp of the last data update",
+    "placeholders": { "time": { "content": "$1" } }
+  },
+  "limitReset": {
+    "message": "Reset $TIME$",
+    "description": "Shows the reset time of a usage limit",
+    "placeholders": { "time": { "content": "$1" } }
+  },
+  "savedToggleInterval": {
+    "message": "Rotation interval saved: $VALUE$s",
+    "description": "Status message after saving the badge rotation interval",
+    "placeholders": { "value": { "content": "$1" } }
+  },
+  "savedRefreshInterval": {
+    "message": "Refresh interval saved: $VALUE$s",
+    "description": "Status message after saving the data refresh interval",
+    "placeholders": { "value": { "content": "$1" } }
+  },
+  "savedOrgId": {
+    "message": "Organization ID saved",
+    "description": "Status message after saving the organization ID"
+  },
+  "clearedOrgId": {
+    "message": "Organization ID cleared",
+    "description": "Status message after clearing the organization ID"
+  },
+  "saved": {
+    "message": "Saved",
+    "description": "Generic status message after saving a setting"
+  },
+  "tooltipStepSession": {
+    "message": "Session % (green)",
+    "description": "Tooltip: description of the session percentage badge step"
+  },
+  "tooltipStepSessionReset": {
+    "message": "hours until session reset (yellow)",
+    "description": "Tooltip: description of the session reset countdown badge step"
+  },
+  "tooltipStepWeek": {
+    "message": "Week % (blue)",
+    "description": "Tooltip: description of the weekly percentage badge step"
+  },
+  "tooltipNoSteps": {
+    "message": "no steps active",
+    "description": "Tooltip: shown when no badge steps are enabled"
+  },
+  "tooltipTitle": {
+    "message": "Claude Usage – badge rotates every $SECONDS$s between: $STEPS$. Data refreshed every $REFRESH$s (as of $STAMP$)",
+    "description": "Tooltip title summarizing the badge rotation and refresh settings",
+    "placeholders": {
+      "seconds": { "content": "$1" },
+      "steps": { "content": "$2" },
+      "refresh": { "content": "$3" },
+      "stamp": { "content": "$4" }
+    }
+  },
+  "tooltipLine": {
+    "message": "$KIND$ ($GROUP$): $PERCENT$% used – Reset $RESET$",
+    "description": "Tooltip line describing a single usage limit",
+    "placeholders": {
+      "kind": { "content": "$1" },
+      "group": { "content": "$2" },
+      "percent": { "content": "$3" },
+      "reset": { "content": "$4" }
+    }
+  },
+  "noOrgIdTitle": {
+    "message": "Claude Usage: no organization ID set (enter it in the popup under settings)",
+    "description": "Tooltip shown when no organization ID is configured"
+  },
+  "pollFailedTitle": {
+    "message": "Claude Usage: refresh failed (not logged in, or the API response changed)",
+    "description": "Tooltip shown when polling the usage API fails"
+  }
+}

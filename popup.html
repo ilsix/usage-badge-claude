@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <title>Usage Badge for Claude.ai</title>
@@ -213,41 +213,41 @@
 <body>
   <h1><img src="icon.svg" alt=""> Usage Badge for Claude.ai</h1>
 
-  <div id="limits">Lade…</div>
+  <div id="limits" data-i18n="loading">Loading…</div>
   <div class="updated" id="updated"></div>
 
-  <button id="refresh">Jetzt aktualisieren</button>
+  <button id="refresh" data-i18n="refreshNow">Refresh now</button>
 
   <hr>
 
-  <label for="interval">Wechsel-Intervall Badge (Session ⇄ Reset ⇄ Woche), in Sekunden:</label>
+  <label for="interval" data-i18n="toggleIntervalLabel">Badge rotation interval (Session ⇄ Reset ⇄ Week), in seconds:</label>
   <div class="row">
     <input type="number" id="interval" min="2" max="3600" step="1">
-    <span>Sekunden</span>
+    <span data-i18n="seconds">seconds</span>
   </div>
 
-  <label>Aktive Badge-Schritte:</label>
+  <label data-i18n="activeBadgeStepsLabel">Active badge steps:</label>
   <div class="checkbox-group">
-    <label class="checkbox-item"><input type="checkbox" id="showSession"> Session %</label>
-    <label class="checkbox-item"><input type="checkbox" id="showSessionReset"> Reset-Countdown (Stunden)</label>
-    <label class="checkbox-item"><input type="checkbox" id="showWeek"> Woche %</label>
+    <label class="checkbox-item"><input type="checkbox" id="showSession"> <span data-i18n="stepSession">Session %</span></label>
+    <label class="checkbox-item"><input type="checkbox" id="showSessionReset"> <span data-i18n="stepSessionReset">Reset countdown (hours)</span></label>
+    <label class="checkbox-item"><input type="checkbox" id="showWeek"> <span data-i18n="stepWeek">Week %</span></label>
   </div>
 
-  <label for="refreshSeconds">Aktualisierungs-Intervall der Daten:</label>
+  <label for="refreshSeconds" data-i18n="refreshIntervalLabel">Data refresh interval:</label>
   <div class="row">
     <input type="number" id="refreshSeconds" min="10" max="3600" step="1">
-    <span>Sekunden</span>
+    <span data-i18n="seconds">seconds</span>
   </div>
 
-  <label for="orgId">Organisation-ID (aus der Usage-API-URL):</label>
+  <label for="orgId" data-i18n="orgIdLabel">Organization ID (from the usage API URL):</label>
   <div class="row">
-    <input type="password" id="orgId" placeholder="z.B. 5c4c1190-994b-...">
-    <button type="button" id="toggleOrgId" class="icon-btn">Anzeigen</button>
+    <input type="password" id="orgId" data-i18n-placeholder="orgIdPlaceholder" placeholder="e.g. 5c4c1190-994b-...">
+    <button type="button" id="toggleOrgId" class="icon-btn" data-i18n="show">Show</button>
   </div>
 
   <div class="status" id="status"></div>
-  <div class="hint">Grün = Session, Gelb = Reset-Countdown, Blau = Woche. Änderungen werden sofort übernommen.</div>
-  <div class="disclaimer">Unofficial add-on. Not affiliated with, endorsed by, or sponsored by Anthropic or Claude.</div>
+  <div class="hint" data-i18n="hintText">Green = Session, Yellow = Reset countdown, Blue = Week. Changes apply instantly.</div>
+  <div class="disclaimer" data-i18n="disclaimer">Unofficial add-on. Not affiliated with, endorsed by, or sponsored by Anthropic or Claude.</div>
   <div class="version" id="version"></div>
 
   <script src="popup.js"></script>

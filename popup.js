@@ -19,10 +19,22 @@ const showWeekInput = document.getElementById("showWeek");
 const status = document.getElementById("status");
 const versionEl = document.getElementById("version");
 
+function localizePage() {
+  document.documentElement.lang = browser.i18n.getUILanguage();
+  document.querySelectorAll("[data-i18n]").forEach((el) => {
+    const msg = browser.i18n.getMessage(el.getAttribute("data-i18n"));
+    if (msg) el.textContent = msg;
+  });
+  document.querySelectorAll("[data-i18n-placeholder]").forEach((el) => {
+    const msg = browser.i18n.getMessage(el.getAttribute("data-i18n-placeholder"));
+    if (msg) el.placeholder = msg;
+  });
+}
+
 function formatResetTime(iso) {
-  if (!iso) return "unbekannt";
+  if (!iso) return browser.i18n.getMessage("unknown");
   try {
-    return new Date(iso).toLocaleString("de-DE", {
+    return new Date(iso).toLocaleString(browser.i18n.getUILanguage(), {
       weekday: "short",
       hour: "2-digit",
       minute: "2-digit"
@@ -34,7 +46,7 @@ function formatResetTime(iso) {
 
 function renderLimits(data) {
   if (!data || !data.limits || !data.limits.length) {
-    limitsEl.textContent = "Keine Daten – nicht eingeloggt?";
+    limitsEl.textContent = browser.i18n.getMessage("noData");
     updatedEl.textContent = "";
     return;
   }
@@ -64,7 +76,7 @@ function renderLimits(data) {
 
     const reset = document.createElement("div");
     reset.className = "limit-reset";
-    reset.textContent = `Reset ${formatResetTime(l.resetsAt)}`;
+    reset.textContent = browser.i18n.getMessage("limitReset", [formatResetTime(l.resetsAt)]);
 
     card.appendChild(top);
     card.appendChild(track);
@@ -72,10 +84,11 @@ function renderLimits(data) {
     limitsEl.appendChild(card);
   }
 
-  updatedEl.textContent = `Stand: ${new Date(data.timestamp).toLocaleTimeString("de-DE", {
+  const stamp = new Date(data.timestamp).toLocaleTimeString(browser.i18n.getUILanguage(), {
     hour: "2-digit",
     minute: "2-digit"
-  })}`;
+  });
+  updatedEl.textContent = browser.i18n.getMessage("updatedAt", [stamp]);
 }
 
 function loadLimits() {
@@ -86,12 +99,12 @@ function loadLimits() {
 
 refreshBtn.addEventListener("click", () => {
   refreshBtn.disabled = true;
-  refreshBtn.textContent = "Aktualisiere…";
+  refreshBtn.textContent = browser.i18n.getMessage("refreshing");
   browser.runtime.sendMessage({ type: "manual-refresh" }).finally(() => {
     setTimeout(() => {
       loadLimits();
       refreshBtn.disabled = false;
-      refreshBtn.textContent = "Jetzt aktualisieren";
+      refreshBtn.textContent = browser.i18n.getMessage("refreshNow");
     }, 500);
   });
 });
@@ -122,7 +135,7 @@ intervalInput.addEventListener("input", () => {
   clearTimeout(toggleSaveTimeout);
   toggleSaveTimeout = setTimeout(() => {
     browser.storage.local.set({ toggleSeconds: value }).then(() => {
-      showStatus(`Wechsel-Intervall gespeichert: ${value}s`);
+      showStatus(browser.i18n.getMessage("savedToggleInterval", [String(value)]));
     });
   }, 300);
 });
@@ -135,7 +148,7 @@ refreshInput.addEventListener("input", () => {
   clearTimeout(refreshSaveTimeout);
   refreshSaveTimeout = setTimeout(() => {
     browser.storage.local.set({ refreshSeconds: value }).then(() => {
-      showStatus(`Aktualisierungs-Intervall gespeichert: ${value}s`);
+      showStatus(browser.i18n.getMessage("savedRefreshInterval", [String(value)]));
     });
   }, 300);
 });
@@ -143,7 +156,7 @@ refreshInput.addEventListener("input", () => {
 toggleOrgIdBtn.addEventListener("click", () => {
   const isHidden = orgIdInput.type === "password";
   orgIdInput.type = isHidden ? "text" : "password";
-  toggleOrgIdBtn.textContent = isHidden ? "Verstecken" : "Anzeigen";
+  toggleOrgIdBtn.textContent = browser.i18n.getMessage(isHidden ? "hide" : "show");
 });
 
 let orgIdSaveTimeout = null;
@@ -153,29 +166,30 @@ orgIdInput.addEventListener("input", () => {
   clearTimeout(orgIdSaveTimeout);
   orgIdSaveTimeout = setTimeout(() => {
     browser.storage.local.set({ orgId: value }).then(() => {
-      showStatus(value ? "Organisation-ID gespeichert" : "Organisation-ID geleert");
+      showStatus(browser.i18n.getMessage(value ? "savedOrgId" : "clearedOrgId"));
     });
   }, 500);
 });
 
 showSessionInput.addEventListener("change", () => {
   browser.storage.local.set({ showSession: showSessionInput.checked }).then(() => {
-    showStatus("Gespeichert");
+    showStatus(browser.i18n.getMessage("saved"));
   });
 });
 
 showSessionResetInput.addEventListener("change", () => {
   browser.storage.local.set({ showSessionReset: showSessionResetInput.checked }).then(() => {
-    showStatus("Gespeichert");
+    showStatus(browser.i18n.getMessage("saved"));
   });
 });
 
 showWeekInput.addEventListener("change", () => {
   browser.storage.local.set({ showWeek: showWeekInput.checked }).then(() => {
-    showStatus("Gespeichert");
+    showStatus(browser.i18n.getMessage("saved"));
   });
 });
 
 versionEl.textContent = `v${browser.runtime.getManifest().version}`;
 
+localizePage();
 loadLimits();

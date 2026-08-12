@@ -4,6 +4,17 @@ Shows your remaining Claude.ai usage as a badge number on the toolbar icon.
 
 **Unofficial add-on. Not affiliated with, endorsed by, or sponsored by Anthropic or Claude.**
 
+## Localization
+
+The extension UI is localized via the standard WebExtension `browser.i18n`
+API (`_locales/en`, `_locales/de`). The displayed language is picked up
+automatically from the browser's UI language (`browser.i18n.getUILanguage()`)
+— English is the default (`default_locale` in `manifest.json`), with a
+German translation available. There is no in-extension language switch;
+change the browser's language to switch the extension's language too. Dates,
+times and decimal numbers (e.g. the hours-until-reset badge value) are also
+formatted using the browser's UI language via `Intl`/`toLocaleString`.
+
 ## How it works
 
 By default every 60 seconds (via `setInterval` in the persistent background
