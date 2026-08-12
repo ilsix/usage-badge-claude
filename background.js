@@ -16,7 +16,11 @@ const SESSION_RESET_COLOR = "#f9a825"; // gelb
 const WEEK_COLOR = "#1565c0"; // blau
 const UNKNOWN_COLOR = "#888888"; // grau
 
-let lastData = null; // letzte erfolgreich abgerufene Nutzlast (überlebt fehlgeschlagene Polls)
+let lastData = null; // letzte erfolgreich abgerufene Nutzlast (überlebt einzelne fehlgeschlagene Polls)
+
+const MAX_CONSECUTIVE_FAILURES = 3;
+let consecutiveFailures = 0;
+let dataStale = false; // true nach MAX_CONSECUTIVE_FAILURES Fehl-Polls in Folge -> Badge zeigt "?"
 
 let toggleSeconds = DEFAULT_TOGGLE_SECONDS;
 let toggleIntervalHandle = null;
@@ -105,6 +109,12 @@ function buildRotation(summary) {
 }
 
 function renderBadge() {
+  if (dataStale) {
+    browser.browserAction.setBadgeText({ text: "?" });
+    browser.browserAction.setBadgeBackgroundColor({ color: UNKNOWN_COLOR });
+    return;
+  }
+
   const summary = summarize(lastData);
   const rotation = summary ? buildRotation(summary) : [];
 
@@ -171,12 +181,19 @@ async function pollUsage() {
       .filter((l) => l && typeof l.percent === "number" && l.group)
       .map((l) => ({ group: l.group, kind: l.kind, percent: l.percent, resetsAt: l.resets_at }));
 
+    consecutiveFailures = 0;
+    dataStale = false;
     updateBadge({ limits, timestamp: Date.now() });
   } catch (e) {
     console.error("Claude Usage: Poll fehlgeschlagen", e);
+    consecutiveFailures++;
     browser.browserAction.setTitle({
       title: "Claude Usage: Aktualisierung fehlgeschlagen (nicht eingeloggt oder API-Antwort geändert)"
     });
+    if (consecutiveFailures >= MAX_CONSECUTIVE_FAILURES) {
+      dataStale = true;
+      renderBadge();
+    }
   }
 }
 
