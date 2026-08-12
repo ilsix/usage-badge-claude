@@ -1,0 +1,52 @@
+name: Sign and publish XPI (main)
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'manifest.json'
+      - 'background.js'
+      - 'popup.html'
+      - 'popup.js'
+      - 'icon.svg'
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  sign:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Determine version
+        id: vars
+        run: |
+          VERSION=$(node -p "require('./manifest.json').version")
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Sign and submit to AMO (unlisted)
+        run: |
+          npx --yes web-ext@latest sign \
+            --source-dir . \
+            --artifacts-dir ./web-ext-artifacts \
+            --channel unlisted \
+            --api-key "${{ secrets.AMO_API_KEY }}" \
+            --api-secret "${{ secrets.AMO_API_SECRET }}" \
+            --ignore-files 'README.md' '.gitignore' '.github/**'
+
+      - name: Upload signed XPI as workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: usage-badge-claude-ai-${{ steps.vars.outputs.version }}-signed
+          path: web-ext-artifacts/*.xpi
+          retention-days: 30
+          if-no-files-found: error
