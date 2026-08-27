@@ -1,14 +1,176 @@
-// Org-ID aus der Usage-API-URL. Muss im Popup unter "Organisation-ID"
-// eingetragen werden. Ermitteln: DevTools -> Netzwerk -> Fetch/XHR ->
-// Usage-Seite neu laden -> URL der Anfrage an
-// /api/organizations/<ID>/usage kopieren.
+// Org-ID für die Usage-API. Wird automatisch über die Organisations-Liste
+// der API ermittelt (siehe detectOrgId), solange keine gesetzt ist. Im Popup
+// kann sie zusätzlich manuell eingetragen oder neu erkannt werden.
 const DEFAULT_REFRESH_SECONDS = 60;
 const DEFAULT_TOGGLE_SECONDS = 10;
 
+const ORGANIZATIONS_URL = "https://claude.ai/api/organizations";
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+// Nach einem Fehlschlag wird die Erkennung nicht bei jedem Poll wiederholt,
+// sondern mit wachsendem Abstand (60s, 120s, ... max. 15 Minuten). Ein
+// geöffnetes Popup löst dagegen sofort einen neuen Versuch aus.
+const DETECT_MIN_RETRY_SECONDS = 60;
+const DETECT_MAX_RETRY_SECONDS = 900;
+
 let orgId = "";
+let orgIdSource = "manual"; // "auto" = automatisch erkannt, "manual" = im Popup eingetragen
 
 function usageUrl() {
   return `https://claude.ai/api/organizations/${orgId}/usage`;
+}
+
+// Fehlercode des letzten Fehlschlags, bestimmt den Tooltip-Text:
+// "notLoggedIn" | "noOrgs" | "network" | "api"
+let lastErrorCode = null;
+
+class UsageError extends Error {
+  constructor(code, message) {
+    super(message || code);
+    this.code = code;
+  }
+}
+
+function errorMessageKey(code) {
+  switch (code) {
+    case "notLoggedIn":
+      return "errNotLoggedIn";
+    case "noOrgs":
+      return "errNoOrgs";
+    case "network":
+      return "errNetwork";
+    default:
+      return "errApi";
+  }
+}
+
+function setErrorTitle(code) {
+  browser.browserAction.setTitle({ title: t("tooltipError", t(errorMessageKey(code))) });
+}
+
+let detectionInFlight = null;
+let detectionRetrySeconds = DETECT_MIN_RETRY_SECONDS;
+let nextDetectionAt = 0;
+
+// Verbindungszustand in storage.local spiegeln, damit das Popup ihn anzeigen
+// kann - auch wenn es während des Versuchs gar nicht offen war. "source" sagt,
+// woher der Zustand stammt: "detect" = Org-ID-Erkennung, "poll" = Usage-Abruf.
+// Ein erfolgreicher Poll überschreibt so auch einen alten Erkennungsfehler.
+let lastStatusKey = "";
+function setStatus(state, source, code) {
+  const key = `${state}|${source}|${code || ""}`;
+  if (key === lastStatusKey) return;
+  lastStatusKey = key;
+  browser.storage.local.set({
+    orgDetection: { state, source, code: code || null, at: Date.now() }
+  });
+}
+
+// Holt die Organisationen des eingeloggten Kontos. Ohne gültige Session
+// antwortet claude.ai mit 401/403 oder liefert die Login-Seite als HTML
+// statt JSON - beides wird als "nicht eingeloggt" gemeldet.
+async function fetchOrganizations() {
+  let res;
+  try {
+    res = await fetch(ORGANIZATIONS_URL, {
+      credentials: "include",
+      headers: { Accept: "application/json" }
+    });
+  } catch (e) {
+    throw new UsageError("network", e.message);
+  }
+
+  if (res.status === 401 || res.status === 403) throw new UsageError("notLoggedIn", `HTTP ${res.status}`);
+  if (!res.ok) throw new UsageError("api", `HTTP ${res.status}`);
+
+  let json;
+  try {
+    json = await res.json();
+  } catch (e) {
+    const contentType = res.headers.get("content-type") || "";
+    throw new UsageError(contentType.includes("html") ? "notLoggedIn" : "api", "keine JSON-Antwort");
+  }
+
+  const orgs = (Array.isArray(json) ? json : [])
+    .filter((o) => o && typeof o.uuid === "string" && UUID_PATTERN.test(o.uuid))
+    .map((o) => ({
+      uuid: o.uuid,
+      name: typeof o.name === "string" && o.name.trim() ? o.name.trim() : o.uuid,
+      capabilities: Array.isArray(o.capabilities) ? o.capabilities : []
+    }));
+
+  if (!orgs.length) throw new UsageError("noOrgs", "leere Organisationsliste");
+  return orgs;
+}
+
+// Ein Konto kann mehrere Organisationen haben (z.B. zusätzlich eine reine
+// API-/Console-Organisation ohne Chat-Limits). Bevorzugt wird die
+// Organisation, die Chat kann und ein bezahltes Abo trägt.
+function pickOrganization(orgs) {
+  const score = (org) => {
+    const caps = org.capabilities;
+    let value = 0;
+    if (caps.includes("chat")) value += 4;
+    if (caps.some((c) => c === "claude_pro" || c === "claude_max")) value += 2;
+    if (caps.includes("api") && !caps.includes("chat")) value -= 4;
+    return value;
+  };
+  return orgs.reduce((best, org) => (score(org) > score(best) ? org : best));
+}
+
+async function runDetection() {
+  setStatus("pending", "detect");
+  try {
+    const orgs = await fetchOrganizations();
+    const chosen = pickOrganization(orgs);
+
+    orgId = chosen.uuid;
+    orgIdSource = "auto";
+    detectionRetrySeconds = DETECT_MIN_RETRY_SECONDS;
+    nextDetectionAt = 0;
+    lastErrorCode = null;
+
+    await browser.storage.local.set({
+      orgId,
+      orgIdSource: "auto",
+      // Für die Auswahlliste im Popup, falls das Konto mehrere Organisationen hat
+      detectedOrgs: orgs.map((o) => ({ uuid: o.uuid, name: o.name }))
+    });
+    setStatus("ok", "detect");
+    return { ok: true, orgId };
+  } catch (e) {
+    const code = e && e.code ? e.code : "api";
+    console.error("Claude Usage: Org-ID-Erkennung fehlgeschlagen", e);
+
+    lastErrorCode = code;
+    nextDetectionAt = Date.now() + detectionRetrySeconds * 1000;
+    detectionRetrySeconds = Math.min(DETECT_MAX_RETRY_SECONDS, detectionRetrySeconds * 2);
+
+    setStatus("error", "detect", code);
+    setErrorTitle(code);
+    renderBadge();
+    return { ok: false, code };
+  }
+}
+
+// Erkennung anstoßen; parallele Aufrufe hängen sich an den laufenden Versuch.
+function detectOrgId() {
+  if (detectionInFlight) return detectionInFlight;
+  detectionInFlight = runDetection().finally(() => {
+    detectionInFlight = null;
+  });
+  return detectionInFlight;
+}
+
+// Automatischer Versuch im Hintergrund: nur ohne gesetzte ID und nur, wenn
+// der Backoff seit dem letzten Fehlschlag abgelaufen ist.
+function autoDetectOrgId() {
+  if (orgId) return Promise.resolve({ ok: true, orgId });
+  if (detectionInFlight) return detectionInFlight;
+  if (Date.now() < nextDetectionAt) {
+    return Promise.resolve({ ok: false, code: lastErrorCode || "api" });
+  }
+  return detectOrgId();
 }
 
 const SESSION_COLOR = "#2e7d32"; // grün
@@ -172,16 +334,35 @@ function updateBadge(data) {
 
 async function pollUsage() {
   if (!orgId) {
-    renderBadge();
-    browser.browserAction.setTitle({
-      title: t("noOrgIdTitle")
-    });
-    return;
+    const detection = await autoDetectOrgId();
+    if (!detection.ok) {
+      renderBadge();
+      setErrorTitle(detection.code);
+      return;
+    }
   }
 
   try {
-    const res = await fetch(usageUrl(), { credentials: "include" });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    let res;
+    try {
+      res = await fetch(usageUrl(), { credentials: "include" });
+    } catch (e) {
+      throw new UsageError("network", e.message);
+    }
+
+    if (res.status === 401 || res.status === 403) {
+      throw new UsageError("notLoggedIn", `HTTP ${res.status}`);
+    }
+    // 404 auf eine automatisch erkannte ID heißt meist: Konto gewechselt.
+    // ID verwerfen, damit der nächste Poll neu erkennt.
+    if (res.status === 404 && orgIdSource === "auto") {
+      orgId = "";
+      nextDetectionAt = 0;
+      await browser.storage.local.remove("orgId");
+      throw new UsageError("noOrgs", "HTTP 404");
+    }
+    if (!res.ok) throw new UsageError("api", `HTTP ${res.status}`);
+
     const json = await res.json();
 
     const limits = (json.limits || [])
@@ -190,13 +371,16 @@ async function pollUsage() {
 
     consecutiveFailures = 0;
     dataStale = false;
+    lastErrorCode = null;
+    setStatus("ok", "poll");
     updateBadge({ limits, timestamp: Date.now() });
   } catch (e) {
+    const code = e && e.code ? e.code : "api";
     console.error("Claude Usage: Poll fehlgeschlagen", e);
+    lastErrorCode = code;
     consecutiveFailures++;
-    browser.browserAction.setTitle({
-      title: t("pollFailedTitle")
-    });
+    setStatus("error", "poll", code);
+    setErrorTitle(code);
     if (consecutiveFailures >= MAX_CONSECUTIVE_FAILURES) {
       dataStale = true;
       renderBadge();
@@ -221,9 +405,23 @@ browser.storage.onChanged.addListener((changes, area) => {
     pollUsage();
   }
 
+  // Nur reagieren, wenn die ID wirklich neu ist: die automatische Erkennung
+  // schreibt sie selbst und hat dann schon gepollt.
   if (changes.orgId) {
-    orgId = (changes.orgId.newValue || "").trim();
-    pollUsage();
+    const next = (changes.orgId.newValue || "").trim();
+    if (next !== orgId) {
+      orgId = next;
+      if (next) {
+        lastErrorCode = null;
+        detectionRetrySeconds = DETECT_MIN_RETRY_SECONDS;
+        nextDetectionAt = 0;
+      }
+      pollUsage();
+    }
+  }
+
+  if (changes.orgIdSource) {
+    orgIdSource = changes.orgIdSource.newValue === "auto" ? "auto" : "manual";
   }
 
   if (changes.showSession) {
@@ -251,9 +449,13 @@ browser.storage.onChanged.addListener((changes, area) => {
   }
 });
 
-// Manuelles Refresh über den Button im Popup
+// Manuelles Refresh und Org-ID-Erkennung über das Popup
 browser.runtime.onMessage.addListener((msg) => {
-  if (msg && msg.type === "manual-refresh") return pollUsage();
+  if (!msg) return;
+  if (msg.type === "manual-refresh") return pollUsage();
+  // Vom Popup ausgelöst: umgeht den Backoff, weil der Nutzer gerade dabei ist
+  // (z.B. direkt nachdem er sich bei claude.ai eingeloggt hat).
+  if (msg.type === "detect-org-id") return detectOrgId().then((r) => pollUsage().then(() => r));
 });
 
 browser.runtime.onStartup.addListener(() => pollUsage());
@@ -266,6 +468,7 @@ browser.storage.local
     "toggleSeconds",
     "refreshSeconds",
     "orgId",
+    "orgIdSource",
     "showSession",
     "showSessionReset",
     "showWeek",
@@ -275,6 +478,7 @@ browser.storage.local
     if (res.toggleSeconds > 0) toggleSeconds = res.toggleSeconds;
     if (res.refreshSeconds > 0) refreshSeconds = res.refreshSeconds;
     if (typeof res.orgId === "string" && res.orgId.trim()) orgId = res.orgId.trim();
+    orgIdSource = res.orgIdSource === "auto" ? "auto" : "manual";
     if (typeof res.showSession === "boolean") showSession = res.showSession;
     if (typeof res.showSessionReset === "boolean") showSessionReset = res.showSessionReset;
     if (typeof res.showWeek === "boolean") showWeek = res.showWeek;
@@ -283,4 +487,7 @@ browser.storage.local
     startToggle();
     renderBadge();
     startRefreshLoop();
+    // Ohne gespeicherte ID sofort einmal erkennen, statt bis zum ersten
+    // Poll-Intervall zu warten.
+    if (!orgId) pollUsage();
   });

@@ -48,7 +48,7 @@
     "description": "Label for the data refresh interval input"
   },
   "orgIdLabel": {
-    "message": "Organisation-ID (aus der Usage-API-URL):",
+    "message": "Organisation-ID (automatisch erkannt):",
     "description": "Label for the organization ID input"
   },
   "orgIdPlaceholder": {
@@ -62,6 +62,26 @@
   "hide": {
     "message": "Verstecken",
     "description": "Button label to hide the organization ID"
+  },
+  "detectOrgId": {
+    "message": "Erneut erkennen",
+    "description": "Button label that re-runs the automatic organization ID detection"
+  },
+  "detecting": {
+    "message": "Erkenne…",
+    "description": "Status shown while the organization ID is being detected"
+  },
+  "orgDetected": {
+    "message": "Organisation-ID automatisch erkannt.",
+    "description": "Status shown after the organization ID was detected successfully"
+  },
+  "orgPickerLabel": {
+    "message": "Erkannte Organisationen:",
+    "description": "Label for the dropdown listing the detected organizations"
+  },
+  "orgIdHint": {
+    "message": "Wird automatisch erkannt, solange du bei claude.ai eingeloggt bist. Nur bei fehlgeschlagener Erkennung von Hand eintragen.",
+    "description": "Hint below the organization ID field explaining the automatic detection"
   },
   "hintText": {
     "message": "Grün = Session, Gelb = Reset-Countdown, Blau = Woche. Änderungen werden sofort übernommen.",
@@ -143,12 +163,25 @@
       "reset": { "content": "$4" }
     }
   },
-  "noOrgIdTitle": {
-    "message": "Claude Usage: keine Organisation-ID gesetzt (im Popup unter Einstellungen eintragen)",
-    "description": "Tooltip shown when no organization ID is configured"
+  "tooltipError": {
+    "message": "Claude Usage: $MESSAGE$",
+    "description": "Tooltip prefix for an error message",
+    "placeholders": { "message": { "content": "$1" } }
   },
-  "pollFailedTitle": {
-    "message": "Claude Usage: Aktualisierung fehlgeschlagen (nicht eingeloggt oder API-Antwort geändert)",
-    "description": "Tooltip shown when polling the usage API fails"
+  "errNotLoggedIn": {
+    "message": "Nicht bei claude.ai eingeloggt – claude.ai öffnen, einloggen und erneut versuchen.",
+    "description": "Error shown when claude.ai rejects the request because there is no session"
+  },
+  "errNoOrgs": {
+    "message": "Keine Claude-Organisation für dieses Konto gefunden.",
+    "description": "Error shown when the account has no usable organization"
+  },
+  "errNetwork": {
+    "message": "claude.ai ist nicht erreichbar (Netzwerkfehler).",
+    "description": "Error shown when the request to claude.ai fails at the network level"
+  },
+  "errApi": {
+    "message": "Unerwartete Antwort von claude.ai (die API hat sich vermutlich geändert).",
+    "description": "Error shown when claude.ai answers with something unexpected"
   }
 }

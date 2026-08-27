@@ -6,15 +6,12 @@ from. Unchecked boxes are open.
 
 ## High value — fixes a documented pain point
 
-- [ ] **Automatic org-ID detection.** Today onboarding requires the
-      DevTools → Network → copy-the-URL dance described in the README,
-      and `orgId` has no default (`background.js`, `popup.js`). Either
-      add a `webRequest` listener on
-      `https://claude.ai/api/organizations/*/usage` to capture the ID the
-      first time the user visits claude.ai, or fetch
-      `https://claude.ai/api/organizations` in the background and offer a
-      dropdown of orgs. The existing `https://claude.ai/*` host
-      permission covers both.
+- [x] **Automatic org-ID detection.** Done: the background script fetches
+      `https://claude.ai/api/organizations` whenever no ID is stored,
+      picks the chat organization and saves it. Failures are reported by
+      cause (not logged in / no organization / network / API changed) in
+      the popup and the tooltip, retried with a growing backoff, and the
+      popup offers a dropdown when the account has several organizations.
 - [ ] **Icon-as-gauge instead of a 4-character badge.** Firefox shows
       only ~4 characters in the badge, which is why values rotate.
       Rendering the icon itself via
@@ -41,10 +38,11 @@ from. Unchecked boxes are open.
       hitting the private API at the same fixed rate. Add exponential
       backoff on consecutive failures, honor `Retry-After` / HTTP 429,
       and pause while the browser is idle (`idle` permission).
-- [ ] **Distinguish error types.** 401, 5xx and a changed JSON shape all
-      collapse into one `pollFailedTitle` string. Split "not logged in"
-      (with a clickable link to claude.ai) from "API changed" from
-      "network down" so breakage is self-diagnosing.
+- [ ] **Distinguish error types — remaining bits.** Mostly done with the
+      org-ID detection: 401/403, a login-page redirect, a network error
+      and an unexpected response now map to separate messages in the
+      popup and the tooltip. Still open: a clickable link to claude.ai in
+      the "not logged in" case, and honoring 429/`Retry-After`.
 - [ ] **Tests and a lint gate.** There is no test setup. `summarize`,
       `buildRotation`, `formatHoursUntil` and the `t()` placeholder
       substitution are pure and trivially testable. Add `web-ext lint` to
@@ -82,8 +80,8 @@ from. Unchecked boxes are open.
       the runtime layer load JSON from `_locales` so the popup's language
       override and `browser.i18n` share one source of truth.
 
-## Suggested first three
+## Suggested next three
 
-Automatic org-ID detection (removes the worst onboarding step), the
-MV3/alarms port (avoids a forced scramble later), and threshold
-notifications (the reason to install a usage monitor at all).
+Automatic org-ID detection is done. Next up: the MV3/alarms port (avoids
+a forced scramble later), threshold notifications (the reason to install
+a usage monitor at all), and usage history + burn-rate projection.
