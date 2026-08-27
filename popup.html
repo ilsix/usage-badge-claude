@@ -199,6 +199,17 @@
     min-height: 1.1em;
   }
 
+  .org-status {
+    font-size: 0.72rem;
+    color: var(--text-secondary);
+    line-height: 1.35;
+    margin-bottom: 0.5rem;
+  }
+
+  .org-status.error { color: #e06c5b; }
+
+  #orgIdHint { margin-bottom: 0.75rem; }
+
   .hint {
     margin-top: 0.4rem;
     font-size: 0.72rem;
@@ -260,11 +271,26 @@
     <span data-i18n="seconds">seconds</span>
   </div>
 
-  <label for="orgId" data-i18n="orgIdLabel">Organization ID (from the usage API URL):</label>
+  <label for="orgId" data-i18n="orgIdLabel">Organization ID (detected automatically):</label>
   <div class="row">
     <input type="password" id="orgId" data-i18n-placeholder="orgIdPlaceholder" placeholder="e.g. 5c4c1190-994b-...">
     <button type="button" id="toggleOrgId" class="icon-btn" data-i18n="show">Show</button>
   </div>
+
+  <div class="org-status" id="orgStatus"></div>
+
+  <div id="orgPickerRow" hidden>
+    <label for="orgPicker" data-i18n="orgPickerLabel">Detected organizations:</label>
+    <div class="row">
+      <select id="orgPicker"></select>
+    </div>
+  </div>
+
+  <div class="row">
+    <button type="button" id="detectOrgId" class="icon-btn" data-i18n="detectOrgId">Detect again</button>
+  </div>
+
+  <div class="hint" id="orgIdHint" data-i18n="orgIdHint">Detected automatically as long as you are logged in to claude.ai. Enter it by hand only if detection fails.</div>
 
   <div class="status" id="status"></div>
   <div class="hint" data-i18n="hintText">Green = Session, Yellow = Reset countdown, Blue = Week. Changes apply instantly.</div>

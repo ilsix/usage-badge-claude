@@ -13,6 +13,10 @@ const intervalInput = document.getElementById("interval");
 const refreshInput = document.getElementById("refreshSeconds");
 const orgIdInput = document.getElementById("orgId");
 const toggleOrgIdBtn = document.getElementById("toggleOrgId");
+const detectOrgIdBtn = document.getElementById("detectOrgId");
+const orgStatus = document.getElementById("orgStatus");
+const orgPickerRow = document.getElementById("orgPickerRow");
+const orgPicker = document.getElementById("orgPicker");
 const showSessionInput = document.getElementById("showSession");
 const showSessionResetInput = document.getElementById("showSessionReset");
 const showWeekInput = document.getElementById("showWeek");
@@ -28,6 +32,85 @@ function localizePage() {
   document.querySelectorAll("[data-i18n-placeholder]").forEach((el) => {
     el.placeholder = t(el.getAttribute("data-i18n-placeholder"));
   });
+}
+
+// Letzter vom Hintergrundskript gemeldeter Verbindungszustand und die zuletzt
+// erkannten Organisationen - gemerkt, damit nach einem Sprachwechsel neu
+// gerendert werden kann.
+let detectionState = null;
+let detectedOrgs = [];
+
+// Ein "erkannt"-Hinweis ist nur direkt nach der Erkennung interessant, danach
+// sagt er nichts mehr aus.
+const DETECTED_HINT_MAX_AGE_MS = 60000;
+
+function errorMessageKey(code) {
+  switch (code) {
+    case "notLoggedIn":
+      return "errNotLoggedIn";
+    case "noOrgs":
+      return "errNoOrgs";
+    case "network":
+      return "errNetwork";
+    default:
+      return "errApi";
+  }
+}
+
+function renderDetection(state) {
+  if (state !== undefined) detectionState = state || null;
+  const current = detectionState;
+
+  orgStatus.classList.remove("error");
+  if (!current) {
+    orgStatus.textContent = "";
+  } else if (current.state === "error") {
+    orgStatus.textContent = t(errorMessageKey(current.code));
+    orgStatus.classList.add("error");
+  } else if (current.state === "pending" && current.source === "detect") {
+    orgStatus.textContent = t("detecting");
+  } else if (
+    current.state === "ok" &&
+    current.source === "detect" &&
+    Date.now() - current.at < DETECTED_HINT_MAX_AGE_MS
+  ) {
+    orgStatus.textContent = t("orgDetected");
+  } else {
+    orgStatus.textContent = "";
+  }
+
+  renderOrgPicker();
+}
+
+// Auswahlliste nur zeigen, wenn das Konto mehrere Organisationen hat -
+// bei genau einer gibt es nichts zu wählen.
+function renderOrgPicker() {
+  if (detectedOrgs.length < 2) {
+    orgPickerRow.hidden = true;
+    return;
+  }
+
+  orgPickerRow.hidden = false;
+  orgPicker.innerHTML = "";
+  for (const org of detectedOrgs) {
+    const option = document.createElement("option");
+    option.value = org.uuid;
+    option.textContent = org.name || org.uuid;
+    orgPicker.appendChild(option);
+  }
+  orgPicker.value = orgIdInput.value.trim();
+}
+
+function requestDetection() {
+  detectOrgIdBtn.disabled = true;
+  renderDetection({ state: "pending", source: "detect", at: Date.now() });
+  browser.runtime
+    .sendMessage({ type: "detect-org-id" })
+    .catch(() => null)
+    .then(() => {
+      detectOrgIdBtn.disabled = false;
+      loadLimits();
+    });
 }
 
 function formatResetTime(iso) {
@@ -109,7 +192,17 @@ refreshBtn.addEventListener("click", () => {
 });
 
 browser.storage.local
-  .get(["toggleSeconds", "refreshSeconds", "orgId", "showSession", "showSessionReset", "showWeek", "language"])
+  .get([
+    "toggleSeconds",
+    "refreshSeconds",
+    "orgId",
+    "orgDetection",
+    "detectedOrgs",
+    "showSession",
+    "showSessionReset",
+    "showWeek",
+    "language"
+  ])
   .then((res) => {
     intervalInput.value = res.toggleSeconds > 0 ? res.toggleSeconds : DEFAULT_TOGGLE_SECONDS;
     refreshInput.value = res.refreshSeconds > 0 ? res.refreshSeconds : DEFAULT_REFRESH_SECONDS;
@@ -120,8 +213,35 @@ browser.storage.local
     languageInput.value = res.language === "en" || res.language === "de" ? res.language : "auto";
     setLanguagePreference(languageInput.value);
     localizePage();
+    detectedOrgs = Array.isArray(res.detectedOrgs) ? res.detectedOrgs : [];
+    renderDetection(res.orgDetection);
     loadLimits();
+
+    // Ohne ID sofort einen Versuch starten: der Nutzer ist gerade da und hat
+    // sich womöglich eben erst eingeloggt, also den Backoff im Hintergrund
+    // überspringen.
+    if (!orgIdInput.value) requestDetection();
   });
+
+// Erkennung und Poll laufen im Hintergrund weiter, während das Popup offen
+// ist - Feld und Status entsprechend nachziehen.
+browser.storage.onChanged.addListener((changes, area) => {
+  if (area !== "local") return;
+
+  if (changes.orgId) {
+    const value = (changes.orgId.newValue || "").trim();
+    if (value !== orgIdInput.value.trim()) orgIdInput.value = value;
+  }
+
+  if (changes.detectedOrgs) {
+    detectedOrgs = Array.isArray(changes.detectedOrgs.newValue) ? changes.detectedOrgs.newValue : [];
+    renderDetection();
+  }
+
+  if (changes.orgDetection) renderDetection(changes.orgDetection.newValue);
+
+  if (changes.lastUsageData) renderLimits(changes.lastUsageData.newValue);
+});
 
 let statusTimeout = null;
 function showStatus(text) {
@@ -168,10 +288,21 @@ orgIdInput.addEventListener("input", () => {
 
   clearTimeout(orgIdSaveTimeout);
   orgIdSaveTimeout = setTimeout(() => {
-    browser.storage.local.set({ orgId: value }).then(() => {
+    // Von Hand eingetragene IDs überschreibt die Erkennung nicht mehr.
+    browser.storage.local.set({ orgId: value, orgIdSource: "manual" }).then(() => {
       showStatus(t(value ? "savedOrgId" : "clearedOrgId"));
     });
   }, 500);
+});
+
+detectOrgIdBtn.addEventListener("click", requestDetection);
+
+orgPicker.addEventListener("change", () => {
+  const value = orgPicker.value;
+  orgIdInput.value = value;
+  browser.storage.local.set({ orgId: value, orgIdSource: "manual" }).then(() => {
+    showStatus(t("savedOrgId"));
+  });
 });
 
 showSessionInput.addEventListener("change", () => {
@@ -198,6 +329,7 @@ languageInput.addEventListener("change", () => {
     setLanguagePreference(value);
     localizePage();
     toggleOrgIdBtn.textContent = t(orgIdInput.type === "password" ? "show" : "hide");
+    renderDetection();
     loadLimits();
     showStatus(t("saved"));
   });

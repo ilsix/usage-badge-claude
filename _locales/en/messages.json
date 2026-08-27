@@ -48,7 +48,7 @@
     "description": "Label for the data refresh interval input"
   },
   "orgIdLabel": {
-    "message": "Organization ID (from the usage API URL):",
+    "message": "Organization ID (detected automatically):",
     "description": "Label for the organization ID input"
   },
   "orgIdPlaceholder": {
@@ -62,6 +62,26 @@
   "hide": {
     "message": "Hide",
     "description": "Button label to hide the organization ID"
+  },
+  "detectOrgId": {
+    "message": "Detect again",
+    "description": "Button label that re-runs the automatic organization ID detection"
+  },
+  "detecting": {
+    "message": "Detecting…",
+    "description": "Status shown while the organization ID is being detected"
+  },
+  "orgDetected": {
+    "message": "Organization ID detected automatically.",
+    "description": "Status shown after the organization ID was detected successfully"
+  },
+  "orgPickerLabel": {
+    "message": "Detected organizations:",
+    "description": "Label for the dropdown listing the detected organizations"
+  },
+  "orgIdHint": {
+    "message": "Detected automatically as long as you are logged in to claude.ai. Enter it by hand only if detection fails.",
+    "description": "Hint below the organization ID field explaining the automatic detection"
   },
   "hintText": {
     "message": "Green = Session, Yellow = Reset countdown, Blue = Week. Changes apply instantly.",
@@ -143,12 +163,25 @@
       "reset": { "content": "$4" }
     }
   },
-  "noOrgIdTitle": {
-    "message": "Claude Usage: no organization ID set (enter it in the popup under settings)",
-    "description": "Tooltip shown when no organization ID is configured"
+  "tooltipError": {
+    "message": "Claude Usage: $MESSAGE$",
+    "description": "Tooltip prefix for an error message",
+    "placeholders": { "message": { "content": "$1" } }
   },
-  "pollFailedTitle": {
-    "message": "Claude Usage: refresh failed (not logged in, or the API response changed)",
-    "description": "Tooltip shown when polling the usage API fails"
+  "errNotLoggedIn": {
+    "message": "Not logged in to claude.ai – open claude.ai, log in, then try again.",
+    "description": "Error shown when claude.ai rejects the request because there is no session"
+  },
+  "errNoOrgs": {
+    "message": "No Claude organization found for this account.",
+    "description": "Error shown when the account has no usable organization"
+  },
+  "errNetwork": {
+    "message": "claude.ai is not reachable (network error).",
+    "description": "Error shown when the request to claude.ai fails at the network level"
+  },
+  "errApi": {
+    "message": "Unexpected response from claude.ai (the API may have changed).",
+    "description": "Error shown when claude.ai answers with something unexpected"
   }
 }

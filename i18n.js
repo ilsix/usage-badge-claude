@@ -19,10 +19,15 @@ const LOCALES = {
     stepSessionReset: "Reset countdown (hours)",
     stepWeek: "Week %",
     refreshIntervalLabel: "Data refresh interval:",
-    orgIdLabel: "Organization ID (from the usage API URL):",
+    orgIdLabel: "Organization ID (detected automatically):",
     orgIdPlaceholder: "e.g. 5c4c1190-994b-...",
     show: "Show",
     hide: "Hide",
+    detectOrgId: "Detect again",
+    detecting: "Detecting…",
+    orgDetected: "Organization ID detected automatically.",
+    orgPickerLabel: "Detected organizations:",
+    orgIdHint: "Detected automatically as long as you are logged in to claude.ai. Enter it by hand only if detection fails.",
     hintText: "Green = Session, Yellow = Reset countdown, Blue = Week. Changes apply instantly.",
     disclaimer: "Unofficial add-on. Not affiliated with, endorsed by, or sponsored by Anthropic or Claude.",
     unknown: "unknown",
@@ -39,8 +44,11 @@ const LOCALES = {
     tooltipNoSteps: "no steps active",
     tooltipTitle: "Claude Usage – badge rotates every {0}s between: {1}. Data refreshed every {2}s (as of {3})",
     tooltipLine: "{0} ({1}): {2}% used – Reset {3}",
-    noOrgIdTitle: "Claude Usage: no organization ID set (enter it in the popup under settings)",
-    pollFailedTitle: "Claude Usage: refresh failed (not logged in, or the API response changed)"
+    tooltipError: "Claude Usage: {0}",
+    errNotLoggedIn: "Not logged in to claude.ai – open claude.ai, log in, then try again.",
+    errNoOrgs: "No Claude organization found for this account.",
+    errNetwork: "claude.ai is not reachable (network error).",
+    errApi: "Unexpected response from claude.ai (the API may have changed)."
   },
   de: {
     loading: "Lade…",
@@ -56,10 +64,15 @@ const LOCALES = {
     stepSessionReset: "Reset-Countdown (Stunden)",
     stepWeek: "Woche %",
     refreshIntervalLabel: "Aktualisierungs-Intervall der Daten:",
-    orgIdLabel: "Organisation-ID (aus der Usage-API-URL):",
+    orgIdLabel: "Organisation-ID (automatisch erkannt):",
     orgIdPlaceholder: "z.B. 5c4c1190-994b-...",
     show: "Anzeigen",
     hide: "Verstecken",
+    detectOrgId: "Erneut erkennen",
+    detecting: "Erkenne…",
+    orgDetected: "Organisation-ID automatisch erkannt.",
+    orgPickerLabel: "Erkannte Organisationen:",
+    orgIdHint: "Wird automatisch erkannt, solange du bei claude.ai eingeloggt bist. Nur bei fehlgeschlagener Erkennung von Hand eintragen.",
     hintText: "Grün = Session, Gelb = Reset-Countdown, Blau = Woche. Änderungen werden sofort übernommen.",
     disclaimer: "Inoffizielles Add-on. Nicht verbunden mit, unterstützt von oder gesponsert von Anthropic oder Claude.",
     unknown: "unbekannt",
@@ -76,8 +89,11 @@ const LOCALES = {
     tooltipNoSteps: "keine Schritte aktiv",
     tooltipTitle: "Claude Usage – Badge wechselt alle {0}s zwischen: {1}. Daten alle {2}s aktualisiert (Stand {3})",
     tooltipLine: "{0} ({1}): {2}% verwendet – Reset {3}",
-    noOrgIdTitle: "Claude Usage: keine Organisation-ID gesetzt (im Popup unter Einstellungen eintragen)",
-    pollFailedTitle: "Claude Usage: Aktualisierung fehlgeschlagen (nicht eingeloggt oder API-Antwort geändert)"
+    tooltipError: "Claude Usage: {0}",
+    errNotLoggedIn: "Nicht bei claude.ai eingeloggt – claude.ai öffnen, einloggen und erneut versuchen.",
+    errNoOrgs: "Keine Claude-Organisation für dieses Konto gefunden.",
+    errNetwork: "claude.ai ist nicht erreichbar (Netzwerkfehler).",
+    errApi: "Unerwartete Antwort von claude.ai (die API hat sich vermutlich geändert)."
   }
 };
 

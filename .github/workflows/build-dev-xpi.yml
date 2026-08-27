@@ -10,6 +10,8 @@ on:
       - 'background.js'
       - 'popup.html'
       - 'popup.js'
+      - 'i18n.js'
+      - '_locales/**'
       - 'icon.svg'
   workflow_dispatch: {}
 

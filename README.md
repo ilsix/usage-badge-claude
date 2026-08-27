@@ -36,12 +36,50 @@ script, configurable) the extension calls Claude's internal API directly:
 GET https://claude.ai/api/organizations/<ORG_ID>/usage
 ```
 
-The org ID is set in the popup under "Organisation-ID" (no default,
-must be entered), stored via `browser.storage.local`. The fetch runs in the
-background script with `credentials: "include"` — thanks to the host
-permission `https://claude.ai/*` in the manifest, your existing claude.ai
-cookies are sent automatically. **No** tab is opened, no content script is
-needed.
+The org ID is detected automatically (see below) and stored via
+`browser.storage.local`; it can still be overridden in the popup. The fetch
+runs in the background script with `credentials: "include"` — thanks to the
+host permission `https://claude.ai/*` in the manifest, your existing
+claude.ai cookies are sent automatically. **No** tab is opened, no content
+script is needed.
+
+### Automatic organization-ID detection
+
+As long as no org ID is stored, the background script asks the same API for
+the organizations of the logged-in account:
+
+```
+GET https://claude.ai/api/organizations
+```
+
+It picks the organization used for chat (preferring one with a paid plan,
+so an extra API/Console organization on the same account doesn't win),
+saves its `uuid` and polls usage immediately. This happens on its own —
+there is nothing to configure and no DevTools detour.
+
+- The attempt runs when the extension starts, on the next poll while no ID
+  is stored, and whenever the popup is opened without one.
+- After a failure it is retried with a growing delay (60s, 120s, … up to 15
+  minutes) instead of on every poll. Opening the popup or pressing "Detect
+  again" skips that wait — handy right after logging in.
+- If the account has more than one organization, the popup shows a dropdown
+  of the detected ones so a different one can be picked. A manually entered
+  or picked ID is never overwritten by the detection.
+- If an automatically detected ID stops working (HTTP 404, e.g. after
+  switching accounts), it is discarded and detected again on the next poll.
+
+Failures are reported by cause, in the popup below the org-ID field and in
+the toolbar tooltip:
+
+| Cause | Message |
+| --- | --- |
+| 401/403, or claude.ai answering with the login page | "Not logged in to claude.ai – open claude.ai, log in, then try again." |
+| Account has no usable organization | "No Claude organization found for this account." |
+| Request failed at the network level | "claude.ai is not reachable (network error)." |
+| Anything else unexpected | "Unexpected response from claude.ai (the API may have changed)." |
+
+The same distinction applies to the usage poll itself, so an expired login
+no longer looks the same as a changed API.
 
 The response contains a `limits` array with entries like
 `{"kind":"session","group":"session","percent":23,"resets_at":"..."}` and
@@ -74,7 +112,9 @@ that's more stable than DOM scraping.
     - Three "Aktive Badge-Schritte" checkboxes (session %, reset
       countdown, week %), all on by default
     - Data/API refresh interval (seconds, default 60s, min. 10s)
-    - Organization ID (text, no default — must be entered)
+    - Organization ID (detected automatically; editable, with a "Detect
+      again" button and — for accounts with several organizations — a
+      dropdown of the detected ones)
 - **Tooltip** (hover over the icon, no click needed): breakdown of every
   limit including reset time and timestamp of the last update.
 
@@ -154,9 +194,10 @@ programs.firefox.policies.ExtensionSettings = {
   logic lives in `background.js` (function `pollUsage`). This only applies
   if at least one badge step is active — if all three are switched off, no
   badge is shown regardless of poll state.
-- The **org ID is editable in the popup** (field "Organisation-ID"), with
-  no default. Without an ID entered, the badge shows `?` (unless all badge
-  steps are switched off). To find it:
+- The **org ID is detected automatically** and stays editable in the popup
+  (field "Organisation-ID"). Detection needs a logged-in claude.ai session;
+  while it fails the badge shows `?` (unless all badge steps are switched
+  off) and the popup names the reason. It can still be entered by hand:
   DevTools → Network → Fetch/XHR → open/reload the Usage settings page →
   copy the URL of the `/api/organizations/<ID>/usage` request, paste it
   into the popup.
