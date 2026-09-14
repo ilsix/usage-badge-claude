@@ -1,4 +1,4 @@
-name: Build dev XPI
+name: "AUTO: build dev XPI"
 
 on:
   push:
