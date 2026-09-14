@@ -14,17 +14,20 @@
     --accent: #da7756;
     --track: rgba(255, 255, 255, 0.08);
     --radius: 10px;
+    --popup-width: 300px;
   }
 
   * { box-sizing: border-box; }
 
   html {
-    /* Fixes the popup width and reserves room for the vertical scrollbar,
-       so its appearance never pushes the content sideways. */
-    width: 300px;
-    max-width: 100%;
+    /* The browser sizes the popup from this document's preferred width, so
+       cap it with an absolute length: a percentage cannot be resolved during
+       that measuring pass and Firefox then falls back to the max-content
+       width of the text (~750px). The width itself stays auto, so when a
+       vertical scrollbar takes part of the popup the layout shrinks with it
+       instead of overflowing sideways. */
+    max-width: var(--popup-width);
     overflow-x: hidden;
-    scrollbar-gutter: stable;
     scrollbar-width: thin;
     scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
   }
@@ -41,8 +44,9 @@
     background: var(--bg);
     color: var(--text);
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
-    width: 100%;
-    max-width: 100%;
+    /* No width: the body fills whatever the root element ends up being. The
+       cap repeats it as a safety net for the measuring pass above. */
+    max-width: var(--popup-width);
     margin: 0;
     padding: 0.9rem;
     font-size: 13px;
