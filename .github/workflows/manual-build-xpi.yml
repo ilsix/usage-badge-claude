@@ -1,0 +1,71 @@
+name: "MAN A: build unsigned XPI and release"
+
+on:
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Determine build metadata
+        id: vars
+        run: |
+          VERSION=$(node -p "require('./manifest.json').version")
+          {
+            echo "version=$VERSION"
+            echo "tag=v${VERSION}-unsigned"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Build extension
+        run: |
+          npx --yes web-ext@latest build \
+            --source-dir . \
+            --artifacts-dir web-ext-artifacts \
+            --overwrite-dest \
+            --ignore-files 'README.md' '.gitignore' '.github/**'
+
+      - name: Package as .xpi
+        run: |
+          ZIP_FILE=$(ls web-ext-artifacts/*.zip | head -n1)
+          mv "$ZIP_FILE" web-ext-artifacts/usage-badge-claude-ai-unsigned.xpi
+
+      - name: Create or update the unsigned release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="${{ steps.vars.outputs.tag }}"
+          VERSION="${{ steps.vars.outputs.version }}"
+          XPI_PATH="web-ext-artifacts/usage-badge-claude-ai-unsigned.xpi"
+
+          TITLE="v${VERSION} (unsigned)"
+
+          NOTES="Manual **unsigned** build of version ${VERSION}, from branch \`${GITHUB_REF_NAME}\` at commit ${GITHUB_SHA}.
+
+          This build has no AMO signature. Release Firefox refuses a permanent installation of it. Load it temporarily via \`about:debugging#/runtime/this-firefox\`, or use it with \`xpinstall.signatures.required=false\` / a force-installed Enterprise Policy.
+
+          For the signed release of the same version, run the \`MAN B: sign and publish XPI (main)\` workflow."
+
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" "$XPI_PATH" --clobber
+            gh release edit "$TAG" \
+              --title "$TITLE" \
+              --notes "$NOTES" \
+              --target "$GITHUB_SHA"
+          else
+            gh release create "$TAG" "$XPI_PATH" \
+              --title "$TITLE" \
+              --notes "$NOTES" \
+              --prerelease \
+              --target "$GITHUB_SHA"
+          fi
