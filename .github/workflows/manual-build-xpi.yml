@@ -1,18 +1,6 @@
-name: "AUTO: build dev XPI"
+name: "MAN A: build unsigned XPI and release"
 
 on:
-  push:
-    branches:
-      - 'claude/**'
-      - main
-    paths:
-      - 'manifest.json'
-      - 'background.js'
-      - 'popup.html'
-      - 'popup.js'
-      - 'i18n.js'
-      - '_locales/**'
-      - 'icon.svg'
   workflow_dispatch: {}
 
 permissions:
@@ -34,15 +22,9 @@ jobs:
         id: vars
         run: |
           VERSION=$(node -p "require('./manifest.json').version")
-          BRANCH_SLUG=$(echo "${GITHUB_REF_NAME}" | tr '/' '-')
-          SHORT_SHA=$(git rev-parse --short HEAD)
-          XPI_NAME="usage-badge-claude-ai-dev-${BRANCH_SLUG}.xpi"
           {
             echo "version=$VERSION"
-            echo "branch_slug=$BRANCH_SLUG"
-            echo "short_sha=$SHORT_SHA"
-            echo "xpi_name=$XPI_NAME"
-            echo "tag=dev-${BRANCH_SLUG}"
+            echo "tag=v${VERSION}-unsigned"
           } >> "$GITHUB_OUTPUT"
 
       - name: Build extension
@@ -56,24 +38,23 @@ jobs:
       - name: Package as .xpi
         run: |
           ZIP_FILE=$(ls web-ext-artifacts/*.zip | head -n1)
-          mv "$ZIP_FILE" "web-ext-artifacts/${{ steps.vars.outputs.xpi_name }}"
+          mv "$ZIP_FILE" web-ext-artifacts/usage-badge-claude-ai-unsigned.xpi
 
-      - name: Create or update dev release
+      - name: Create or update the unsigned release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           TAG="${{ steps.vars.outputs.tag }}"
           VERSION="${{ steps.vars.outputs.version }}"
-          XPI_PATH="web-ext-artifacts/${{ steps.vars.outputs.xpi_name }}"
+          XPI_PATH="web-ext-artifacts/usage-badge-claude-ai-unsigned.xpi"
 
-          TITLE="v${VERSION}-dev"
-          if [ "${GITHUB_REF_NAME}" != "main" ]; then
-            TITLE="v${VERSION}-dev (${GITHUB_REF_NAME})"
-          fi
+          TITLE="v${VERSION} (unsigned)"
 
-          NOTES="Automated **devbuild** from branch \`${GITHUB_REF_NAME}\` at commit ${GITHUB_SHA} (manifest version ${VERSION}).
+          NOTES="Manual **unsigned** build of version ${VERSION}, from branch \`${GITHUB_REF_NAME}\` at commit ${GITHUB_SHA}.
 
-          This is an **unsigned development build**, not suitable for permanent installation on release Firefox. Load it temporarily via \`about:debugging#/runtime/this-firefox\`, or use it with \`xpinstall.signatures.required=false\` / a force-installed Enterprise Policy."
+          This build has no AMO signature. Release Firefox refuses a permanent installation of it. Load it temporarily via \`about:debugging#/runtime/this-firefox\`, or use it with \`xpinstall.signatures.required=false\` / a force-installed Enterprise Policy.
+
+          For the signed release of the same version, run the \`MAN B: sign and publish XPI (main)\` workflow."
 
           if gh release view "$TAG" >/dev/null 2>&1; then
             gh release upload "$TAG" "$XPI_PATH" --clobber

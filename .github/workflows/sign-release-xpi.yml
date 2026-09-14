@@ -1,4 +1,4 @@
-name: Sign and publish XPI (main)
+name: "MAN B: sign and publish XPI (main)"
 
 on:
   workflow_dispatch: {}
